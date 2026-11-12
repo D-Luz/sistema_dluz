@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block titulo %}Novo pedido - Aprovação de Pedidos{% endblock %}
+{% block conteudo %}
+  <h1>Novo pedido</h1>
+
+  {% if reenvio %}
+    <p class="nota">Reenvio do {{ titulo_pedido(reenvio["id"]) }}</p>
+  {% endif %}
+  {% if erro %}<p class="erro" role="alert">{{ erro }}</p>{% endif %}
+
+  <form class="formulario" method="post" action="{{ url_for('pedidos.novo') }}" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% if reenvio %}<input type="hidden" name="reenvio_de" value="{{ reenvio['id'] }}">{% endif %}
+
+    <label for="cliente">Cliente</label>
+    <input id="cliente" name="cliente" type="text" value="{{ valores['cliente'] }}" maxlength="200" required>
+
+    <label for="valor">Valor (R$)</label>
+    <input id="valor" name="valor" type="text" value="{{ valores['valor'] }}" inputmode="decimal"
+           autocomplete="off" aria-describedby="dica-valor" required>
+    <small id="dica-valor">ex.: 1.234,56</small>
+
+    <label for="descricao">Descrição</label>
+    <textarea id="descricao" name="descricao" rows="5" maxlength="2000" required>{{ valores["descricao"] }}</textarea>
+
+    <label for="arquivo">Arquivo PDF do pedido</label>
+    <input id="arquivo" name="arquivo" type="file" accept=".pdf,application/pdf" required>
+
+    <button type="submit">Enviar para aprovação</button>
+  </form>
+{% endblock %}

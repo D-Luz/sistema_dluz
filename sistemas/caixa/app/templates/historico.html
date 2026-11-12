@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block titulo %}Histórico{% endblock %}
+{% block conteudo %}
+<h1>Histórico</h1>
+<form method="get" class="linha-form filtros">
+  {% set permitidas = empresas_permitidas() %}
+  {% if permitidas | length > 1 %}
+  <div><label for="f-emp">Empresa</label>
+    <select id="f-emp" name="empresa"><option value="">Todas</option>
+      {% for e in permitidas %}<option value="{{ e }}"{% if e == empresa %} selected{% endif %}>{{ EMPRESAS[e]['nome'] }}</option>{% endfor %}
+    </select></div>
+  {% endif %}
+  <div><label for="f-mes">Mês</label><input type="month" id="f-mes" name="mes" value="{{ mes }}"></div>
+  <div><label for="f-st">Situação</label>
+    <select id="f-st" name="status"><option value="">Todas</option>
+      {% for k, r in [('aberto', 'Aberto'), ('fechado', 'Fechado, aguardando financeiro'), ('conferido', 'Conferido')] %}<option value="{{ k }}"{% if k == status %} selected{% endif %}>{{ r }}</option>{% endfor %}
+    </select></div>
+  <div><button class="btn sec" type="submit">Filtrar</button></div>
+</form>
+
+<div class="tabela-rolagem">
+<table>
+  <thead><tr><th>Dia</th><th>Empresa</th><th>Situação</th><th class="n">Entradas</th><th class="n">Gaveta</th><th>Divergências</th><th>Fechado</th><th>Conferido</th></tr></thead>
+  <tbody>
+  {% for x in linhas %}{% set d = x['d'] %}
+    <tr>
+      <td><a href="{{ url_for('rotas.dia', empresa=d['empresa'], data=d['data']) }}">{{ d['data'] | dia_semana }} {{ d['data'] | data_br }}</a></td>
+      <td>{{ EMPRESAS[d['empresa']]['nome'] if d['empresa'] in EMPRESAS else d['empresa'] }}</td>
+      <td>
+        {% if d['status'] == 'aberto' %}<span class="pill wait">aberto</span>
+        {% elif d['status'] == 'fechado' %}<span class="pill info">fechado</span>
+        {% else %}<span class="pill ok">conferido</span>{% endif %}
+        {% if x['pendentes'] %}<span class="pill wait">{{ x['pendentes'] }} aprovação(ões)</span>{% endif %}
+      </td>
+      <td class="n">{{ x['entradas'] | brl }}</td>
+      <td class="n {{ 'negativo' if x['gaveta']['diferenca'] }}">{{ x['gaveta']['diferenca'] | brl(true) if x['gaveta']['diferenca'] is not none else '—' }}</td>
+      <td>{% if d['divergencias'] is none %}—{% elif d['divergencias'] %}<span class="negativo">{{ d['divergencias'] }}</span>{% if d['justificativa'] %} <span class="sub" title="{{ d['justificativa'] }}">“{{ d['justificativa'] | truncate(40) }}”</span>{% endif %}{% else %}0{% endif %}</td>
+      <td>{% if d['fechado_em'] %}{{ d['fechado_nome'] }}<br><span class="sub">{{ d['fechado_em'] | momento }}</span>{% else %}—{% endif %}</td>
+      <td>{% if d['conferido_em'] %}{{ d['conferido_nome'] }}<br><span class="sub">{{ d['conferido_em'] | momento }}</span>{% if d['obs_financeiro'] %}<br><span class="sub">“{{ d['obs_financeiro'] | truncate(40) }}”</span>{% endif %}{% else %}—{% endif %}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="8" class="vazio">Nenhum caixa nesse filtro.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block titulo %}Importar eletricistas{% endblock %}
+{% block conteudo %}
+<h1>Importar do ERP</h1>
+<p class="sub">Marque quem faz parte do programa. Clientes do segmento «eletricista» entram vinculados ao próprio cadastro, então as compras deles já contam. Quem entra hoje só acumula pontos de hoje em diante.</p>
+
+<form method="post">
+  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+  <h2>Clientes no segmento eletricista ({{ cli|length }})</h2>
+  {% if cli %}
+  <div class="tabela-rolagem"><table>
+    <thead><tr><th></th><th>Nome</th><th>Empresa</th><th>Telefone</th><th>Última venda</th></tr></thead>
+    <tbody>{% for c in cli %}
+      <tr><td><input type="checkbox" name="sel" value="cli:{{ c.empresa }}:{{ c.codigo }}" aria-label="Importar {{ c.nome }}"></td>
+        <td>{{ c.nome }}</td><td>{{ EMPRESAS[c.empresa].nome if c.empresa in EMPRESAS }}</td><td class="mono">{{ c.telefone|fone }}</td><td>{{ c.ult_venda|data_br }}</td></tr>
+    {% endfor %}</tbody></table></div>
+  {% else %}<div class="cartao vazio">Nenhum cliente novo nesse segmento.</div>{% endif %}
+
+  <h2>Cadastro «Profissional» do ATS ({{ erp|length }})</h2>
+  {% if erp %}
+  <div class="tabela-rolagem"><table>
+    <thead><tr><th></th><th>Nome</th><th>Empresa</th><th>Telefone</th></tr></thead>
+    <tbody>{% for p in erp %}
+      <tr><td><input type="checkbox" name="sel" value="erp:{{ p.empresa }}:{{ p.codigo }}" aria-label="Importar {{ p.nome }}"></td>
+        <td>{{ p.nome }}</td><td>{{ EMPRESAS[p.empresa].nome if p.empresa in EMPRESAS }}</td><td class="mono">{{ p.telefone|fone }}</td></tr>
+    {% endfor %}</tbody></table></div>
+  {% else %}<div class="cartao vazio">Nenhum profissional no ERP.</div>{% endif %}
+  <p><button class="btn" type="submit">Importar selecionados</button></p>
+</form>
+{% endblock %}

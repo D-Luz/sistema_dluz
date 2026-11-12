@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% from "_icones.html" import icone with context %}
+{% set secao = 'painel' if f.grupo == 'paineis' else 'ferramentas' %}
+{% block titulo %}{{ f.nome }}{% endblock %}
+{% block conteudo %}
+{% include "_trilha.html" %}
+<div class="titulo-com-icone">
+  <span class="card-icone">{{ icone(ICONES.get(f.id, 'documento')) }}</span>
+  <h1>{{ f.nome }}</h1>
+</div>
+<p class="lead mt">{{ f.descricao }}{% if f.detalhes %} {{ f.detalhes }}{% endif %}</p>
+
+<form method="post" enctype="multipart/form-data" class="ficha{{ ' larga' if f.id == 'proposta-orcamento' }}" id="form-ferramenta">
+  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+  {% for c in f.campos %}
+    {% set v = valores.get(c.nome, valor_padrao(c)) if valores else valor_padrao(c) %}
+    {% if c.tipo == 'marcar' %}
+      <div class="campo marcar">
+        <label><input type="checkbox" name="{{ c.nome }}" value="1" {{ 'checked' if v }}> {{ c.rotulo }}</label>
+        {% if c.ajuda %}<div class="ajuda">{{ c.ajuda }}</div>{% endif %}
+      </div>
+    {% elif c.tipo == 'itens' %}
+      <div class="campo">
+        <label>{{ c.rotulo }}</label>
+        <input type="hidden" name="{{ c.nome }}" id="itens-json" value="{{ v }}">
+        <div class="rolagem">
+          <table class="itens-tabela" id="itens-editor"{% if projeto %} data-projeto='{{ projeto|tojson }}'{% endif %}>
+            <thead><tr>
+              <th>Ambiente</th><th>Cód.</th><th>Produto</th><th>Un</th><th>Qtd</th><th>R$ unit.</th>
+              <th>Cód.</th><th>Serviço</th><th>Un</th><th>Qtd</th><th>R$ unit.</th><th>Total</th><th></th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="acoes mt">
+          <button type="button" class="secundario pequeno" id="item-novo">+ Item</button>
+          <label class="botao secundario pequeno">Carregar projeto (.json)<input type="file" accept=".json" id="carregar-projeto" hidden></label>
+          <span class="sub">Total bruto: <b class="mono" id="itens-total">R$ 0,00</b></span>
+        </div>
+        <div class="ajuda">Use vírgula nos valores (ex.: 12,50). Itens do mesmo ambiente saem juntos no PDF.</div>
+      </div>
+    {% else %}
+      <div class="campo">
+        <label for="c-{{ c.nome }}">{{ c.rotulo }}{% if not c.obrigatorio and c.tipo not in ('escolha', 'empresa') %} <span class="sub">(opcional)</span>{% endif %}</label>
+        {% if c.tipo in ('empresa', 'escolha') %}
+          <select id="c-{{ c.nome }}" name="{{ c.nome }}" {{ 'required' if c.obrigatorio }}>
+            {% for valor, rotulo in opcoes_de(c) %}<option value="{{ valor }}" {{ 'selected' if valor|string == v|string }}>{{ rotulo }}</option>{% endfor %}
+          </select>
+        {% elif c.tipo == 'data' %}
+          <input type="date" id="c-{{ c.nome }}" name="{{ c.nome }}" value="{{ v }}" {{ 'required' if c.obrigatorio }}>
+        {% elif c.tipo in ('arquivo', 'arquivos') %}
+          <input type="file" id="c-{{ c.nome }}" name="{{ c.nome }}" {{ 'multiple' if c.tipo == 'arquivos' }} {% if c.aceita %}accept="{{ c.aceita }}"{% endif %} {{ 'required' if c.obrigatorio }}>
+        {% elif c.tipo == 'numero' %}
+          <input type="text" inputmode="decimal" id="c-{{ c.nome }}" name="{{ c.nome }}" value="{{ v }}" {{ 'required' if c.obrigatorio }}>
+        {% else %}
+          <input type="text" id="c-{{ c.nome }}" name="{{ c.nome }}" value="{{ v }}" {{ 'required' if c.obrigatorio }}>
+        {% endif %}
+        {% if c.ajuda %}<div class="ajuda">{{ c.ajuda }}</div>{% endif %}
+      </div>
+    {% endif %}
+  {% endfor %}
+  <div class="acoes">
+    <button id="botao-gerar">Gerar</button>
+    <span class="sub">Roda em segundo plano. O resultado fica no Histórico.</span>
+  </div>
+</form>
+{% endblock %}

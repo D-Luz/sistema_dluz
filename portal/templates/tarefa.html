@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% set secao = 'historico' %}
+{% block titulo %}{{ f.nome if f else t['ferramenta'] }}{% endblock %}
+{% block conteudo %}
+<div id="tarefa" data-estado="{{ url_for('rotas.tarefa_estado', tid=t['id']) }}" data-situacao="{{ t['situacao'] }}">
+<div class="trilha"><a href="{{ url_for('rotas.lista_tarefas') }}">Histórico</a></div>
+<h1>{{ f.nome if f else t['ferramenta'] }}</h1>
+
+{% set mostrar = [] %}
+{% for k, v in params.items() if v and f %}
+  {% for c in f.campos if c.nome == k and c.tipo not in ('itens',) %}
+    {% set _ = mostrar.append((c, v)) %}
+  {% endfor %}
+{% endfor %}
+<p class="resumo-parametros">
+  {% for c, v in mostrar %}
+    {{ c.rotulo }}: <b>{% if c.tipo in ('empresa', 'escolha') %}{{ (opcoes_de(c)|selectattr(0, 'equalto', v)|map(attribute=1)|first) or v }}{% elif c.tipo == 'data' %}{{ v[8:10] }}/{{ v[5:7] }}/{{ v[0:4] }}{% elif c.tipo in ('arquivo', 'arquivos') %}{{ v|join(', ') }}{% elif c.tipo == 'marcar' %}sim{% else %}{{ v }}{% endif %}</b>{% if not loop.last %} · {% endif %}
+  {% endfor %}
+  {% if mostrar %}<br>{% endif %}{{ t['usuario_nome'] }}, {{ t['criada_em']|momento }}
+</p>
+
+{% if t['situacao'] in ('fila', 'rodando') %}
+  <div class="aviso info mt"><span class="girando"></span>Gerando… a página atualiza sozinha quando terminar.</div>
+{% elif t['situacao'] == 'erro' %}
+  <div class="aviso erro mt"><b>Não deu certo.</b> {{ t['erro'] }}</div>
+{% elif t['resumo'] %}
+  <div class="aviso ok mt">{{ t['resumo'] }}</div>
+{% endif %}
+
+{% if arquivos %}
+<div class="arquivos mt">
+  {% for a in arquivos %}
+    <a href="{{ url_for('rotas.baixar', tid=t['id'], nome=a.name) }}">↓ {{ a.name }} <span class="sub">{{ a.stat().st_size|tamanho }}</span></a>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if t['situacao'] == 'ok' and t['pagina'] %}
+  {% set url_ver = url_for('rotas.ver', tid=t['id'], nome=t['pagina']) %}
+  <div class="acoes mt">
+    <a class="botao secundario pequeno" href="{{ url_ver }}" target="_blank" rel="noopener">Abrir em tela cheia</a>
+    {% if t['ferramenta'] == 'proposta-orcamento' %}
+      <a class="botao secundario pequeno" href="{{ url_for('rotas.ferramenta', fid='proposta-orcamento', de=t['id']) }}">Editar e gerar de novo</a>
+    {% endif %}
+    {% if f %}<a class="botao secundario pequeno" href="{{ url_for('rotas.ferramenta', fid=f.id) }}">Gerar outro</a>{% endif %}
+  </div>
+  {% if t['pagina'].endswith(('.jpg', '.png')) %}
+    <p class="mt"><img class="visor-img" src="{{ url_ver }}" alt="Resultado"></p>
+  {% else %}
+    <iframe class="visor mt" src="{{ url_ver }}" title="Resultado"></iframe>
+  {% endif %}
+{% elif f and t['situacao'] in ('ok', 'erro') %}
+  <div class="acoes mt"><a class="botao secundario pequeno" href="{{ url_for('rotas.ferramenta', fid=f.id) }}">{{ 'Tentar de novo' if t['situacao'] == 'erro' else 'Gerar outro' }}</a></div>
+{% endif %}
+
+<details class="detalhes" {{ 'open' if t['situacao'] in ('fila', 'rodando', 'erro') }}>
+  <summary>Registro técnico</summary>
+  <pre class="registro" id="registro">{{ t['log'] or ('Aguardando…' if t['situacao'] in ('fila', 'rodando') else 'Nada registrado.') }}</pre>
+</details>
+</div>
+{% endblock %}

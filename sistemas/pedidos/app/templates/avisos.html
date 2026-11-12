@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from "_macros.html" import multilinha %}
+{% block titulo %}Avisos - Aprovação de Pedidos{% endblock %}
+{% block conteudo %}
+  <h1>Avisos</h1>
+
+  {% if avisos %}
+    <ul class="avisos">
+      {% for a in avisos %}
+        <li class="aviso-item{% if not a['lido'] %} nao-lido{% endif %}">
+          <h2>{{ a["assunto"] }}</h2>
+          <p class="data">{{ a["criado_em"]|instante }}</p>
+          {{ multilinha(a["corpo"]) }}
+          <div class="acoes">
+            {% if a["pedido_id"] %}
+              <a href="{{ url_for('pedidos.detalhe', pedido_id=a['pedido_id']) }}">Abrir {{ titulo_pedido(a["pedido_id"]) }}</a>
+            {% endif %}
+            {% if not a["lido"] %}
+              <form method="post" action="{{ url_for('pedidos.aviso_lido', aviso_id=a['id']) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="secundario">Marcar como lido</button>
+              </form>
+            {% endif %}
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>Nenhum aviso.</p>
+  {% endif %}
+{% endblock %}

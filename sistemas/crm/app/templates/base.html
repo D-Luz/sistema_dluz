@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block titulo %}CRM{% endblock %} · CRM Dluz</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% if usuario %}
+<header class="topo"><div class="in">
+  <span class="marca">CRM Dluz</span>
+  {% set ep = request.endpoint %}
+  <a href="{{ url_for('rotas.hoje') }}" class="{{ 'ativo' if ep == 'rotas.hoje' }}">Hoje</a>
+  <a href="{{ url_for('rotas.vendas') }}" class="{{ 'ativo' if ep == 'rotas.vendas' }}">Vendas</a>
+  <a href="{{ url_for('rotas.profissionais') }}" class="{{ 'ativo' if ep and ep.startswith('rotas.profissional') }}">Eletricistas</a>
+  <a href="{{ url_for('rotas.orcamentos') }}" class="{{ 'ativo' if ep == 'rotas.orcamentos' }}">Orçamentos</a>
+  <a href="{{ url_for('rotas.painel') }}" class="{{ 'ativo' if ep == 'rotas.painel' }}">Painel</a>
+  {% if usuario['admin'] %}<a href="{{ url_for('rotas.configuracoes') }}" class="{{ 'ativo' if ep == 'rotas.configuracoes' }}">Configurações</a>{% endif %}
+  <form method="post" action="{{ url_for('auth.sair') }}">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <span style="opacity:.75;margin-right:.5rem">{{ usuario['nome'] }}</span><button type="submit">Sair</button>
+  </form>
+</div></header>
+{% endif %}
+<main>
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in msgs %}<div class="flash {{ cat }}">{{ msg }}</div>{% endfor %}
+  {% endwith %}
+  {% block conteudo %}{% endblock %}
+  {% if usuario and ultima_sinc %}
+    <p class="rodape">Dados do ERP sincronizados em {{ ultima_sinc['fim'] or ultima_sinc['inicio'] }}{% if not ultima_sinc['ok'] %} — <strong class="negativo">com falhas</strong>{% endif %}.
+    {% if usuario['admin'] %}
+      <form method="post" action="{{ url_for('rotas.sincronizar_agora') }}" style="display:inline"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button class="btn sec" type="submit">Sincronizar agora</button></form>
+    {% endif %}</p>
+  {% elif usuario and usuario['admin'] %}
+    <p class="rodape">Ainda não sincronizado com o ERP.
+      <form method="post" action="{{ url_for('rotas.sincronizar_agora') }}" style="display:inline"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button class="btn sec" type="submit">Sincronizar agora</button></form></p>
+  {% endif %}
+</main>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

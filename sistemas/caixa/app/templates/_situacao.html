@@ -1,0 +1,17 @@
+{# Situação de um lançamento depois de cruzar com o ATS. Espera: l, r (por_lanc[l.id]). #}
+{% set s = r['situacao'] if r else '' %}
+{% if s == 'saida' %}<span class="sub">—</span>
+{% elif s == 'aprovacao' %}
+  {% if l['aprovado_por'] %}<span class="pill ok" title="{{ l['aprovacao_obs'] }}">aprovado · {{ l['aprovado_nome'] }}</span>
+  {% else %}<span class="pill wait">aguardando aprovação</span>{% endif %}
+{% elif s == 'ok' %}
+  <span class="pdv">PDV {{ r['pdv'] }}</span> <span class="sub">{{ r['parte']['hora'] }} · {{ r['parte']['vendedor'] }}</span>{% if r['manual'] %} <span class="sub">(ligado à mão)</span>{% endif %}
+{% elif s == 'valor_diferente' %}
+  <span class="pill bad">valor diferente</span> PDV {{ r['pdv'] }} no ATS: <span class="num">{{ r['parte']['valor'] | brl }}</span>
+{% elif s == 'forma_diferente' %}
+  <span class="pill bad">forma diferente</span> PDV {{ r['pdv'] }} no ATS: {{ conferencia.rotulo_forma(r['parte']['forma']) }}
+{% elif s == 'pdv_inexistente' %}
+  <span class="pill bad">PDV {{ r['pdv'] }} não está no ATS</span>
+{% elif s == 'sem_pdv' %}
+  <span class="pill bad">nenhum PDV com esse valor</span>
+{% endif %}

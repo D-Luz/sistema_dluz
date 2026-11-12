@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe"><NFe><infNFe Id="NFe1" versao="4.00">
+<ide><nNF>56782</nNF><dhEmi>2026-10-20T10:00:00-03:00</dhEmi></ide>
+<emit><xNome>FORNECEDOR TESTE LTDA</xNome></emit><dest><xNome>DLUZ ELETRICA</xNome></dest>
+<det nItem="1"><prod><cProd>A1</cProd><xProd>CABO FLEX 2,5MM</xProd><NCM>85444900</NCM><CFOP>5102</CFOP><qCom>10</qCom><vUnCom>120.50</vUnCom><vProd>1205.00</vProd></prod>
+<imposto><vTotTrib>100.00</vTotTrib><ICMS><ICMS00><CST>00</CST><vBC>1205.00</vBC><pICMS>18</pICMS><vICMS>216.90</vICMS></ICMS00></ICMS>
+<IPI><IPITrib><vBC>1205.00</vBC><pIPI>5</pIPI><vIPI>60.25</vIPI></IPITrib></IPI>
+<PIS><PISAliq><vBC>1205.00</vBC><pPIS>1.65</pPIS><vPIS>19.88</vPIS></PISAliq></PIS><COFINS><COFINSAliq><vBC>1205.00</vBC><pCOFINS>7.6</pCOFINS><vCOFINS>91.58</vCOFINS></COFINSAliq></COFINS></imposto></det>
+<det nItem="2"><prod><cProd>B2</cProd><xProd>DISJUNTOR 20A</xProd><NCM>85362000</NCM><CFOP>5102</CFOP><qCom>5</qCom><vUnCom>18.00</vUnCom><vProd>90.00</vProd></prod>
+<imposto><ICMS><ICMS60><CST>60</CST></ICMS60></ICMS></imposto></det>
+<total><ICMSTot><vProd>1295.00</vProd><vICMS>216.90</vICMS><vST>0</vST><vIPI>60.25</vIPI><vPIS>19.88</vPIS><vCOFINS>91.58</vCOFINS><vNF>1355.25</vNF></ICMSTot></total>
+</infNFe></NFe></nfeProc>

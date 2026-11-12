@@ -1,0 +1,7 @@
+{# Card com ícone. Variáveis: href, ic, titulo, texto, rodape, classe #}
+<a class="card {{ classe|default('') }}" href="{{ href }}">
+  <span class="card-icone">{{ icone(ic) }}</span>
+  <b>{{ titulo }}</b>
+  <span class="card-texto">{{ texto }}</span>
+  <span class="card-rodape">{{ rodape }} <span class="seta">→</span></span>
+</a>

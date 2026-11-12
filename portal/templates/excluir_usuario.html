@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block titulo %}Excluir usuário{% endblock %}
+{% block conteudo %}
+<div class="trilha"><a href="{{ url_for('auth.usuarios') }}">Usuários</a></div>
+<h1>Excluir {{ alvo['nome'] }}?</h1>
+<form method="post" class="ficha estreita">
+  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+  <p>O login <b class="mono">{{ alvo['login'] }}</b> deixa de existir e a pessoa não entra mais no portal.</p>
+  <ul class="sub">
+    {% if qtd_relatorios %}<li>{{ qtd_relatorios }} relatório{{ 's' if qtd_relatorios != 1 }} gerado{{ 's' if qtd_relatorios != 1 }} por ela {{ 'serão apagados' if qtd_relatorios != 1 else 'será apagado' }}.</li>{% endif %}
+    <li>Em Pedidos, CRM e Caixa o cadastro dela também é apagado. Se ela já tiver histórico em algum deles (pedidos, lançamentos), lá o cadastro só fica desativado, para não perder o histórico.</li>
+    <li>Não dá para desfazer. Se for só uma pausa, use “Desativar”.</li>
+  </ul>
+  <div class="acoes">
+    <button class="perigo">Excluir de vez</button>
+    <a class="botao secundario" href="{{ url_for('auth.usuarios') }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

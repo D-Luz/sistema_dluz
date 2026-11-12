@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block titulo %}Orçamentos{% endblock %}
+{% block conteudo %}
+<h1>Orçamentos em aberto</h1>
+<p class="sub">Últimos {{ dias }} dias. Sem o cliente identificado e com telefone, o orçamento não aparece na fila de retorno: peça ao vendedor para cadastrar. Os já baixados (mesmo vendedor e valor de uma venda posterior) e as cópias idênticas ficam de fora.</p>
+
+{% if lista %}
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Data</th><th>Empresa</th><th>Orçamento</th><th>Vendedor</th><th>Cliente</th><th class="n">Total</th><th>Retorno</th></tr></thead>
+  <tbody>{% for o in lista %}
+    <tr>
+      <td>{{ o.data|data_br }}</td><td>{{ EMPRESAS[o.empresa].nome if o.empresa in EMPRESAS }}</td><td class="mono">{{ o.codigo }}</td><td>{{ o.vendedor_nome }}</td>
+      <td>{% if anonimo(o.cliente) %}<span class="negativo">sem cliente</span>{% else %}{{ o.cliente_nome or o.cliente }}{% endif %}</td>
+      <td class="n">{{ o.total|brl }}</td>
+      <td>{% if anonimo(o.cliente) %}<span class="negativo">identificar</span>{% elif not o.telefone %}<span class="negativo">sem telefone</span>{% else %}na fila{% endif %}</td>
+    </tr>
+  {% endfor %}</tbody></table></div>
+{% else %}<div class="cartao vazio">Nenhum orçamento em aberto no período.</div>{% endif %}
+{% endblock %}

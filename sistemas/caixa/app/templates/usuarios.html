@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block titulo %}Usuários{% endblock %}
+{% block conteudo %}
+<h1>Usuários</h1>
+{% if provisoria %}
+<div class="cartao destaque" role="status">
+  <p>Senha provisória de <strong>{{ provisoria['login'] }}</strong>: <code class="num">{{ provisoria['senha'] }}</code></p>
+  {% if provisoria['portal'] %}<p>Ela também entra no Portal Dluz com o usuário <strong>{{ provisoria['login'] }}</strong> e essa senha.</p>{% endif %}
+  <p class="sub">Aparece só agora. Passe pessoalmente; no primeiro acesso a pessoa escolhe a própria senha.</p>
+</div>
+{% endif %}
+
+<section class="cartao">
+  <h2>Novo usuário</h2>
+  <form method="post" class="linha-form">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <input type="hidden" name="acao" value="criar">
+    <div><label for="u-login">Login</label><input type="text" id="u-login" name="login" required autocomplete="off"></div>
+    <div><label for="u-nome">Nome</label><input type="text" id="u-nome" name="nome" required autocomplete="off"></div>
+    <div><label for="u-papel">Papel</label><select id="u-papel" name="papel">{% for k, r in PAPEIS.items() %}<option value="{{ k }}">{{ r }}</option>{% endfor %}</select></div>
+    <div><label for="u-emp">Empresa</label><select id="u-emp" name="empresa"><option value="">Todas</option>{% for k, e in EMPRESAS.items() %}<option value="{{ k }}">{{ e['nome'] }}</option>{% endfor %}</select></div>
+    <div><button class="btn" type="submit">Criar</button></div>
+  </form>
+  <p class="sub">Caixa: lança e fecha o dia. Financeiro: também aprova dev. crédito/pontos, confere e reabre. Administrador: tudo, mais os usuários.</p>
+</section>
+
+<table>
+  <thead><tr><th>Nome</th><th>Login</th><th>Papel</th><th>Empresa</th><th>Situação</th><th></th></tr></thead>
+  <tbody>
+  {% for u in lista %}
+    <tr>
+      <td>{{ u['nome'] }}{% if u['id'] == g.usuario['id'] %} (você){% endif %}</td>
+      <td>{{ u['login'] }}</td>
+      <td>{{ PAPEIS[u['papel']] }}</td>
+      <td>{{ EMPRESAS[u['empresa']]['nome'] if u['empresa'] else 'Todas' }}</td>
+      <td>{{ 'Ativo' if u['ativo'] else 'Inativo' }}{% if u['trocar_senha'] %} · <span class="sub">senha provisória</span>{% endif %}</td>
+      <td class="c-acoes">
+        {% if u['id'] != g.usuario['id'] %}
+        <form method="post" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="acao" value="ativo"><input type="hidden" name="id" value="{{ u['id'] }}"><button class="acao" type="submit">{{ 'Desativar' if u['ativo'] else 'Ativar' }}</button></form>
+        <form method="post" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="acao" value="senha"><input type="hidden" name="id" value="{{ u['id'] }}"><button class="acao" type="submit">Nova senha</button></form>
+        {% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

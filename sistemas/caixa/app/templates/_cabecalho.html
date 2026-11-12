@@ -1,0 +1,27 @@
+{# Empresa, dia e situação do caixa. Espera: empresa, data e, se existir, cx. #}
+{% set status = cx['status'] if cx else None %}
+<div class="cab-dia">
+  <div>
+    <h1>{{ EMPRESAS[empresa]['nome'] }}</h1>
+    <p class="sub">{{ data | dia_semana }} {{ data | data_br }}
+      {% if status == 'aberto' %}<span class="pill wait">Aberto</span>
+      {% elif status == 'fechado' %}<span class="pill info">Fechado · aguardando financeiro</span>
+      {% elif status == 'conferido' %}<span class="pill ok">Conferido</span>
+      {% else %}<span class="pill neu">Não aberto</span>{% endif %}
+    </p>
+  </div>
+  <form class="trocar-dia" method="get" action="{{ url_for('rotas.ir') }}">
+    {% set permitidas = empresas_permitidas() %}
+    {% if permitidas | length > 1 %}
+      <label for="ir-empresa" class="oculto">Empresa</label>
+      <select id="ir-empresa" name="empresa" data-enviar>
+        {% for e in permitidas %}<option value="{{ e }}"{% if e == empresa %} selected{% endif %}>{{ EMPRESAS[e]['nome'] }}</option>{% endfor %}
+      </select>
+    {% else %}
+      <input type="hidden" name="empresa" value="{{ empresa }}">
+    {% endif %}
+    <label for="ir-data" class="oculto">Dia</label>
+    <input type="date" id="ir-data" name="data" value="{{ data }}" max="{{ hoje }}" data-enviar>
+    {% if data != hoje %}<a class="btn sec" href="{{ url_for('rotas.dia', empresa=empresa, data=hoje) }}">Hoje</a>{% endif %}
+  </form>
+</div>

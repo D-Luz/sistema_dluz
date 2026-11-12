@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block titulo %}Trocar senha - Aprovação de Pedidos{% endblock %}
+{% block conteudo %}
+  <h1>Trocar senha</h1>
+  {% if g.usuario["trocar_senha"] %}
+    <p>Por segurança, defina uma senha nova antes de continuar.</p>
+  {% endif %}
+  {% if erro %}<p class="erro" role="alert">{{ erro }}</p>{% endif %}
+  <form class="formulario formulario-estreito" method="post" action="{{ url_for('auth.trocar_senha') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="senha_atual">Senha atual</label>
+    <input id="senha_atual" name="senha_atual" type="password"
+           autocomplete="current-password" required autofocus>
+    <label for="nova_senha">Nova senha (mínimo de {{ config["MIN_SENHA"] }} caracteres)</label>
+    <input id="nova_senha" name="nova_senha" type="password"
+           autocomplete="new-password" minlength="{{ config['MIN_SENHA'] }}" required>
+    <label for="confirmacao">Repita a nova senha</label>
+    <input id="confirmacao" name="confirmacao" type="password"
+           autocomplete="new-password" minlength="{{ config['MIN_SENHA'] }}" required>
+    <button type="submit">Salvar nova senha</button>
+  </form>
+{% endblock %}

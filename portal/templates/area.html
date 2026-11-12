@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% from "_icones.html" import icone with context %}
+{% set secao = 'ferramentas' %}
+{% block titulo %}{{ nome_area }}{% endblock %}
+{% block conteudo %}
+<div class="trilha"><a href="{{ url_for('rotas.ferramentas') }}">Ferramentas</a></div>
+<div class="titulo-com-icone">
+  <span class="card-icone">{{ icone(ICONES[gid]) }}</span>
+  <h1>{{ nome_area }}</h1>
+</div>
+<p class="lead mt">{{ AREAS_DESCRICAO[gid] }}</p>
+<div class="cards mt">
+  {% for f in FERRAMENTAS.values() if f.grupo == gid %}
+    {% with href=url_for('rotas.ferramenta', fid=f.id), ic=ICONES.get(f.id, 'documento'), titulo=f.nome,
+            texto=f.descricao, rodape='Abrir' %}
+      {% include "_card.html" %}
+    {% endwith %}
+  {% endfor %}
+</div>
+{% endblock %}

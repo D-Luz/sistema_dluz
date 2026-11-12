@@ -1,0 +1,12 @@
+{# Dev. crédito e troca de pontos aguardando aprovação. Espera: cx, res; opcional: voltar. #}
+<h3>Aprovações pendentes</h3>
+{% for l in res['pendentes'] %}
+<form method="post" action="{{ url_for('rotas.aprovar', caixa_id=cx['id'], lid=l['id']) }}" class="aprovar">
+  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+  {% if voltar %}<input type="hidden" name="voltar" value="{{ voltar }}">{% endif %}
+  <span><strong>{{ FORMAS[l['forma']]['rotulo'] }}</strong> <span class="num">{{ l['valor'] | brl }}</span> · {{ l['criado_em'] | hora }} · {{ l['criado_nome'] }}<br><span class="sub">“{{ l['obs'] }}”</span></span>
+  <label for="ap{{ l['id'] }}" class="oculto">Observação da aprovação</label>
+  <input type="text" id="ap{{ l['id'] }}" name="obs" maxlength="300" placeholder="observação da aprovação" required>
+  <button class="btn pequeno" type="submit">Aprovar</button>
+</form>
+{% endfor %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block titulo %}Hoje{% endblock %}
+{% block conteudo %}
+<h1>Contatos de hoje</h1>
+<p class="sub">Fila calculada a partir do ERP. Abra o WhatsApp, converse e registre o resultado: a tarefa sai da lista.</p>
+
+<nav class="abas">
+  <a href="{{ url_for('rotas.hoje') }}" class="{{ 'ativo' if not filtro }}">Todos ({{ contagem.values()|sum }})</a>
+  {% for tipo, rotulo in TIPOS.items() if contagem.get(tipo) %}
+    <a href="{{ url_for('rotas.hoje', tipo=tipo) }}" class="{{ 'ativo' if filtro == tipo }}">{{ rotulo }} ({{ contagem[tipo] }})</a>
+  {% endfor %}
+</nav>
+
+{% for t in tarefas %}
+<article class="cartao tarefa">
+  <div>
+    <div><span class="tag">{{ t.rotulo }}</span><span class="nome">{{ t.nome }}</span></div>
+    <div class="det">{{ t.detalhe }}{% if t.telefone %} · <span class="mono">{{ t.telefone|fone }}</span>{% endif %}</div>
+    <details><summary>Ver mensagem sugerida</summary><div class="msg">{{ t.mensagem }}</div></details>
+  </div>
+  <div class="acoes">
+    {% if t.valor and t.tipo in ('ORC', 'POS') %}<div class="num" style="text-align:right">{{ t.valor|brl }}</div>{% endif %}
+    {% if t.link %}<a class="btn" href="{{ t.link }}" target="_blank" rel="noopener noreferrer">Abrir WhatsApp</a>{% endif %}
+  </div>
+  <form method="post" action="{{ url_for('rotas.registrar_contato') }}" class="registro">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <input type="hidden" name="tipo" value="{{ t.tipo }}"><input type="hidden" name="chave" value="{{ t.chave }}">
+    <input type="hidden" name="nome" value="{{ t.nome }}"><input type="hidden" name="empresa" value="{{ t.empresa or '' }}">
+    <input type="hidden" name="cliente_codigo" value="{{ t.cliente_codigo or '' }}"><input type="hidden" name="profissional_id" value="{{ t.profissional_id or '' }}">
+    <input type="hidden" name="filtro" value="{{ filtro }}">
+    <select name="resultado" aria-label="Resultado do contato">
+      {% for k, v in resultados.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}
+    </select>
+    <input type="text" name="obs" placeholder="Observação (opcional)" maxlength="500" style="flex:1;min-width:160px">
+    <button class="btn sec" type="submit">Registrar contato</button>
+  </form>
+</article>
+{% else %}
+<div class="cartao vazio">Nada pendente por aqui. {% if not usuario['admin'] %}Se a lista estiver sempre vazia, peça para sincronizar com o ERP.{% else %}Se a lista estiver sempre vazia, sincronize com o ERP e cadastre os eletricistas.{% endif %}</div>
+{% endfor %}
+{% endblock %}

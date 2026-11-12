@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block titulo %}{{ p.nome }}{% endblock %}
+{% block conteudo %}
+<h1>{{ p.nome }} <span class="nivel {{ r.nivel }}">{{ r.nivel }}</span></h1>
+<p class="sub">No programa desde {{ p.inicio_programa|data_br }}{% if p.telefone %} · <span class="mono">{{ p.telefone|fone }}</span>{% endif %}</p>
+
+<div class="grade">
+  <div class="cartao kpi"><div class="valor">{{ r.saldo|brl }}</div><div class="rotulo">saldo de pontos</div></div>
+  <div class="cartao kpi"><div class="valor">{{ r.total_12m|brl }}</div><div class="rotulo">comprado em 12 meses ({{ r.compras_12m }} compras)</div></div>
+  <div class="cartao kpi"><div class="valor">{{ r.dias if r.dias is not none else '—' }}</div><div class="rotulo">dias desde a última compra</div></div>
+</div>
+
+<h2>Resgatar pontos</h2>
+<form method="post" action="{{ url_for('rotas.resgate', pid=p.id) }}" class="cartao linha-form">
+  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+  <div><label for="valor">Valor (R$)</label><input type="text" id="valor" name="valor" inputmode="decimal" required></div>
+  <div><label for="descricao">Onde foi usado</label><input type="text" id="descricao" name="descricao" placeholder="Pedido / desconto no balcão"></div>
+  <button class="btn" type="submit">Registrar resgate</button>
+  <span class="sub" style="margin:0">O resgate é só o registro: o desconto é dado no ERP.</span>
+</form>
+
+<h2>Extrato de pontos</h2>
+{% if extrato %}
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Quem</th><th class="n">Pontos</th></tr></thead>
+  <tbody>{% for e in extrato %}
+    <tr><td>{{ e.criado_em[:10]|data_br }}</td><td>{{ e.tipo }}</td><td>{{ e.descricao }}</td><td>{{ e.usuario }}</td>
+      <td class="n {{ 'negativo' if e.valor < 0 }}">{{ e.valor|brl }}</td></tr>
+  {% endfor %}</tbody></table></div>
+{% else %}<div class="cartao vazio">Sem movimentação ainda.</div>{% endif %}
+
+{% if usuario['admin'] %}
+<form method="post" action="{{ url_for('rotas.ajuste', pid=p.id) }}" class="cartao linha-form" style="margin-top:.8rem">
+  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+  <div><label for="av">Ajuste manual (use − para tirar)</label><input type="text" id="av" name="valor" required></div>
+  <div><label for="am">Motivo</label><input type="text" id="am" name="motivo" required placeholder="Ex.: devolução do pedido 123"></div>
+  <button class="btn sec" type="submit">Lançar ajuste</button>
+</form>
+{% endif %}
+
+<h2>Últimas compras ligadas a ele</h2>
+{% if compras %}
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Data</th><th>Empresa</th><th>Pedido</th><th>Origem</th><th class="n">Total</th></tr></thead>
+  <tbody>{% for v in compras %}
+    <tr><td>{{ v.data|data_br }}</td><td>{{ EMPRESAS[v.empresa].nome if v.empresa in EMPRESAS }}</td><td class="mono">{{ v.codigo }}</td>
+      <td>{{ {'cliente': 'cadastro próprio', 'erp': 'indicado no ERP'}.get(v.origem, 'indicado no balcão') }}</td><td class="n">{{ v.total|brl }}</td></tr>
+  {% endfor %}</tbody></table></div>
+{% else %}<div class="cartao vazio">Nenhuma venda ligada ainda.</div>{% endif %}
+
+<h2>Contatos feitos</h2>
+{% if contatos %}
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Data</th><th>Tipo</th><th>Resultado</th><th>Observação</th><th>Quem</th></tr></thead>
+  <tbody>{% for c in contatos %}
+    <tr><td>{{ c.criado_em[:10]|data_br }}</td><td>{{ TIPOS.get(c.tipo, c.tipo) }}</td><td>{{ resultados.get(c.resultado, c.resultado) }}</td><td>{{ c.obs }}</td><td>{{ c.usuario }}</td></tr>
+  {% endfor %}</tbody></table></div>
+{% else %}<div class="cartao vazio">Nenhum contato registrado.</div>{% endif %}
+
+<h2>Cadastros dele como cliente no ERP</h2>
+<p class="sub">Tudo o que for comprado nesses cadastros conta para ele automaticamente (pode ter um por loja).</p>
+<div class="cartao">
+  {% for v in vinculos %}
+  <form method="post" action="{{ url_for('rotas.vinculo', pid=p.id) }}" class="linha-form" style="margin-bottom:.4rem">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="acao" value="remover">
+    <input type="hidden" name="empresa" value="{{ v.empresa }}"><input type="hidden" name="cliente_codigo" value="{{ v.cliente_codigo }}">
+    <span>{{ EMPRESAS[v.empresa].nome if v.empresa in EMPRESAS else v.empresa }} · <span class="mono">{{ v.cliente_codigo }}</span> · {{ v.nome or '(não encontrado no ERP)' }}</span>
+    <button class="btn sec" type="submit">Desvincular</button>
+  </form>
+  {% else %}<p class="sub" style="margin:0 0 .6rem">Nenhum cadastro vinculado: só as vendas indicadas no balcão contam.</p>{% endfor %}
+  <form method="post" action="{{ url_for('rotas.vinculo', pid=p.id) }}">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <input type="hidden" id="cliente_codigo" name="cliente_codigo"><input type="hidden" id="empresa" name="empresa">
+    <label for="busca-cliente">Vincular outro cadastro (busque pelo nome)</label>
+    <input type="text" id="busca-cliente" data-url="{{ url_for('rotas.clientes_buscar') }}" autocomplete="off" style="width:100%"><ul id="busca-res" class="busca-res"></ul>
+    <p><button class="btn sec" type="submit">Vincular</button></p>
+  </form>
+</div>
+
+<h2>Dados cadastrais</h2>
+<form method="post" class="cartao">
+  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+  <label for="nome">Nome</label><input type="text" id="nome" name="nome" value="{{ p.nome }}" required style="width:100%">
+  <div class="linha-form">
+    <div><label for="telefone">WhatsApp</label><input type="text" id="telefone" name="telefone" value="{{ p.telefone or '' }}"></div>
+    <div><label for="nascimento">Nascimento</label><input type="date" id="nascimento" name="nascimento" value="{{ p.nascimento or '' }}"></div>
+    <div><label for="cpf">CPF</label><input type="text" id="cpf" name="cpf" value="{{ p.cpf or '' }}"></div>
+  </div>
+  <label for="obs">Observações</label><textarea id="obs" name="obs" rows="3">{{ p.obs or '' }}</textarea>
+  <label><input type="checkbox" name="ativo" value="1" {{ 'checked' if p.ativo }}> Ativo no programa</label>
+  <p><button class="btn" type="submit">Salvar</button></p>
+</form>
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% from "_macros.html" import multilinha %}
+{% block titulo %}{{ titulo_pedido(pedido["id"]) }} - Aprovação de Pedidos{% endblock %}
+{% block conteudo %}
+  <h1>
+    {{ titulo_pedido(pedido["id"]) }}
+    <span class="status status-{{ pedido['status'] }}">{{ status_label[pedido["status"]] }}</span>
+  </h1>
+
+  {% if erro %}<p class="erro" role="alert">{{ erro }}</p>{% endif %}
+
+  {% if motivo %}
+    <section class="motivo" aria-labelledby="titulo-motivo">
+      <h2 id="titulo-motivo">Motivo da reprovação</h2>
+      {{ multilinha(motivo) }}
+      {% if reenviavel %}
+        <p><a class="botao" href="{{ url_for('pedidos.novo', reenvio_de=pedido['id']) }}">Reenviar</a></p>
+      {% endif %}
+    </section>
+  {% endif %}
+
+  <section class="card" aria-labelledby="titulo-dados">
+    <h2 id="titulo-dados">Dados do pedido</h2>
+    <dl class="dados">
+      <dt>Cliente</dt>
+      <dd>{{ pedido["cliente"] }}</dd>
+      <dt>Valor</dt>
+      <dd class="num">{{ pedido["valor_centavos"]|brl }}</dd>
+      <dt>Descrição</dt>
+      <dd>{{ multilinha(pedido["descricao"]) }}</dd>
+      <dt>Solicitante</dt>
+      <dd>{{ pedido["solicitante_nome"] }}</dd>
+      <dt>Criado em</dt>
+      <dd>{{ pedido["criado_em"]|instante }}</dd>
+      {% if pedido["reenvio_de"] %}
+        <dt>Reenvio de</dt>
+        <dd><a href="{{ url_for('pedidos.detalhe', pedido_id=pedido['reenvio_de']) }}">{{ titulo_pedido(pedido["reenvio_de"]) }}</a></dd>
+      {% endif %}
+      {% if pedido["data_pedido"] %}
+        <dt>Data do pedido</dt>
+        <dd>{{ pedido["data_pedido"]|data }}</dd>
+      {% endif %}
+      {% if pedido["numero_nf"] %}
+        <dt>Nota fiscal</dt>
+        <dd class="num">{{ pedido["numero_nf"] }}</dd>
+      {% endif %}
+      {% if pedido["data_chegada"] %}
+        <dt>Data de chegada</dt>
+        <dd>{{ pedido["data_chegada"]|data }}</dd>
+      {% endif %}
+      <dt>Arquivo PDF</dt>
+      <dd>
+        {% if pdf_ok %}
+          <a class="botao secundario" href="{{ url_for('pedidos.pdf', pedido_id=pedido['id']) }}" target="_blank" rel="noopener">Abrir PDF</a>
+          <span class="arquivo">{{ pedido["pdf_nome_original"] }}</span>
+        {% else %}
+          <span class="erro" role="alert">Arquivo PDF não encontrado no servidor</span>
+        {% endif %}
+      </dd>
+    </dl>
+  </section>
+
+  {% if acoes %}
+    <section class="acoes" aria-labelledby="titulo-acoes">
+      <h2 id="titulo-acoes">Ações</h2>
+
+      {% if "aprovar" in acoes %}
+        <form method="post" action="{{ url_for('pedidos.executar_acao', pedido_id=pedido['id'], acao='aprovar') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <label for="comentario-aprovar">Comentário (opcional)</label>
+          <textarea id="comentario-aprovar" name="comentario" rows="2" maxlength="1000"></textarea>
+          <button type="submit">Aprovar</button>
+        </form>
+      {% endif %}
+
+      {% if "reprovar" in acoes %}
+        <form method="post" action="{{ url_for('pedidos.executar_acao', pedido_id=pedido['id'], acao='reprovar') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <label for="comentario-reprovar">Motivo</label>
+          <textarea id="comentario-reprovar" name="comentario" rows="2" maxlength="1000" required></textarea>
+          <button type="submit" class="perigo">Reprovar</button>
+        </form>
+      {% endif %}
+
+      {% if "confirmar_envio" in acoes %}
+        <form method="post" action="{{ url_for('pedidos.executar_acao', pedido_id=pedido['id'], acao='confirmar_envio') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <label for="data-pedido">Data do pedido</label>
+          <input id="data-pedido" type="date" name="data_pedido" max="{{ hoje }}" value="{{ hoje }}" required>
+          <button type="submit">Confirmar envio</button>
+        </form>
+      {% endif %}
+
+      {% if "informar_nf" in acoes %}
+        <form method="post" action="{{ url_for('pedidos.executar_acao', pedido_id=pedido['id'], acao='informar_nf') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <label for="numero-nf">Número da nota fiscal</label>
+          <input id="numero-nf" type="text" name="numero_nf" maxlength="30" autocomplete="off" required>
+          <button type="submit">Informar nota fiscal</button>
+        </form>
+      {% endif %}
+
+      {% if "marcar_chegada" in acoes %}
+        <form method="post" action="{{ url_for('pedidos.executar_acao', pedido_id=pedido['id'], acao='marcar_chegada') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <label for="data-chegada">Data de chegada</label>
+          <input id="data-chegada" type="date" name="data_chegada" max="{{ hoje }}" value="{{ hoje }}" required>
+          <button type="submit">Marcar chegada</button>
+        </form>
+      {% endif %}
+
+      {% if "arquivar" in acoes %}
+        <form method="post" action="{{ url_for('pedidos.executar_acao', pedido_id=pedido['id'], acao='arquivar') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="secundario">Arquivar</button>
+        </form>
+      {% endif %}
+    </section>
+  {% endif %}
+
+  <section aria-labelledby="titulo-historico">
+    <h2 id="titulo-historico">Histórico</h2>
+    <ol class="linha-do-tempo">
+      {% for h in historico %}
+        <li class="evento">
+          <p class="evento-titulo">
+            <strong>{{ acao_label.get(h["acao"], h["acao"]) }}</strong>
+            <span class="evento-status">{% if h["status_anterior"] %}{{ status_label[h["status_anterior"]] }}{% else %}-{% endif %} &rarr; {{ status_label[h["status_novo"]] }}</span>
+          </p>
+          <p class="evento-meta">{{ h["criado_em"]|instante }} &middot; {{ h["usuario_nome"] }}</p>
+          {% if h["comentario"] %}{{ multilinha(h["comentario"]) }}{% endif %}
+        </li>
+      {% endfor %}
+    </ol>
+  </section>
+{% endblock %}

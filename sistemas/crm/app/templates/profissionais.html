@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block titulo %}Eletricistas{% endblock %}
+{% block conteudo %}
+<h1>Eletricistas</h1>
+<p class="sub">Nível pelas compras dos últimos 12 meses (A, B ou C, configurável). «Dias» é o tempo desde a última compra ligada a ele.</p>
+<p><a class="btn" href="{{ url_for('rotas.profissional_novo') }}">Novo eletricista</a>
+   <a class="btn sec" href="{{ url_for('rotas.profissionais_importar') }}">Importar do ERP</a></p>
+
+{% if resumo %}
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Nível</th><th>Nome</th><th class="n">Compras 12m</th><th class="n">Valor 12m</th><th class="n">Dias</th><th class="n">Saldo de pontos</th></tr></thead>
+  <tbody>
+  {% for r in resumo %}
+    <tr style="{{ 'opacity:.55' if not r.p.ativo }}">
+      <td><span class="nivel {{ r.nivel }}">{{ r.nivel }}</span></td>
+      <td><a href="{{ url_for('rotas.profissional', pid=r.p.id) }}">{{ r.p.nome }}</a>{% if not r.p.ativo %} (inativo){% endif %}</td>
+      <td class="n">{{ r.compras_12m }}</td>
+      <td class="n">{{ r.total_12m|brl }}</td>
+      <td class="n">{{ r.dias if r.dias is not none else '—' }}</td>
+      <td class="n">{{ r.saldo|brl }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+<div class="cartao vazio">Nenhum eletricista cadastrado. Comece em «Importar do ERP».</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% from "_icones.html" import icone with context %}
+{% set secao = 'ferramentas' %}
+{% block titulo %}Ferramentas{% endblock %}
+{% block conteudo %}
+<h1>Ferramentas</h1>
+<p class="lead">Escolha uma área. Cada ferramenta gera planilhas, PDFs e tabelas com os dados do ATS ou dos arquivos que você enviar.</p>
+<div class="cards mt">
+  {% for gid, gnome in GRUPOS if gid != 'paineis' %}
+    {% set qtd = FERRAMENTAS.values()|selectattr('grupo', 'equalto', gid)|list|length %}
+    {% with href=url_for('rotas.area', gid=gid), ic=ICONES[gid], titulo=gnome, texto=AREAS_DESCRICAO[gid],
+            rodape=qtd ~ (' ferramentas' if qtd != 1 else ' ferramenta') %}
+      {% include "_card.html" %}
+    {% endwith %}
+  {% endfor %}
+</div>
+{% endblock %}

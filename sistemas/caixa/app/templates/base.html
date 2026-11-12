@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block titulo %}Caixa{% endblock %} · Conferência de Caixa</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+<link rel="apple-touch-icon" href="{{ url_for('static', filename='icone.png') }}">
+</head>
+<body class="{% block corpo %}{% endblock %}">
+{% if g.usuario %}
+<header class="topo"><div class="in">
+  <span class="marca">Conferência de Caixa</span>
+  {% set ep = request.endpoint or '' %}
+  <a href="{{ url_for('rotas.inicio') }}" class="{{ 'ativo' if ep in ('rotas.dia', 'rotas.encerrar') }}">Caixa do dia</a>
+  <a href="{{ url_for('rotas.historico') }}" class="{{ 'ativo' if ep == 'rotas.historico' }}">Histórico</a>
+  {% if pode('usuarios') %}<a href="{{ url_for('auth.usuarios') }}" class="{{ 'ativo' if ep == 'auth.usuarios' }}">Usuários</a>{% endif %}
+  <a href="{{ url_for('auth.trocar_senha') }}" class="{{ 'ativo' if ep == 'auth.trocar_senha' }}">Senha</a>
+  <form method="post" action="{{ url_for('auth.sair') }}">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <span class="quem">{{ g.usuario['nome'] }} · {{ PAPEIS[g.usuario['papel']] }}</span><button type="submit">Sair</button>
+  </form>
+</div></header>
+{% endif %}
+<main>
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in msgs %}<div class="flash {{ cat }}" role="{{ 'alert' if cat == 'erro' else 'status' }}">{{ msg }}</div>{% endfor %}
+  {% endwith %}
+  {% block conteudo %}{% endblock %}
+</main>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+<div class="trilha">{% if f.grupo == 'paineis' %}<a href="{{ url_for('rotas.paineis') }}">Painel</a>{% else %}<a href="{{ url_for('rotas.ferramentas') }}">Ferramentas</a><span>/</span><a href="{{ url_for('rotas.area', gid=f.grupo) }}">{{ NOMES_AREAS[f.grupo] }}</a>{% endif %}</div>

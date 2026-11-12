@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Aprovação de Pedidos{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='estilo.css') }}">
+</head>
+<body>
+  <a class="pular" href="#conteudo">Pular para o conteúdo</a>
+  <header class="topo">
+    <span class="marca">Aprovação de Pedidos</span>
+    {% if g.usuario %}
+      {% set pagina = request.endpoint %}
+      <div class="sessao">
+        <span class="usuario">{{ g.usuario["nome"] }}</span>
+        <form action="{{ url_for('auth.sair') }}" method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="secundario">Sair</button>
+        </form>
+      </div>
+      <nav class="menu" aria-label="Principal">
+        <a href="{{ url_for('pedidos.lista') }}"{% if pagina == 'pedidos.lista' %} aria-current="page"{% endif %}>Pedidos</a>
+        {% if g.usuario["perfil"] == "solicitante" %}
+          <a href="{{ url_for('pedidos.novo') }}"{% if pagina == 'pedidos.novo' %} aria-current="page"{% endif %}>Novo pedido</a>
+        {% endif %}
+        <a href="{{ url_for('pedidos.avisos') }}"{% if pagina == 'pedidos.avisos' %} aria-current="page"{% endif %}>Avisos ({{ avisos_nao_lidos or 0 }})</a>
+        {% if g.usuario["perfil"] == "admin" %}
+          <a href="{{ url_for('admin.usuarios') }}"{% if pagina == 'admin.usuarios' %} aria-current="page"{% endif %}>Usuários</a>
+        {% endif %}
+        <a href="{{ url_for('auth.trocar_senha') }}"{% if pagina == 'auth.trocar_senha' %} aria-current="page"{% endif %}>Trocar senha</a>
+      </nav>
+    {% endif %}
+  </header>
+
+  <main id="conteudo">
+    {% with mensagens = get_flashed_messages(with_categories=true) %}
+      {% if mensagens %}
+        <ul class="mensagens">
+          {% for categoria, texto in mensagens %}
+            <li class="aviso aviso-{{ categoria }}">{{ texto }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    {% block conteudo %}{% endblock %}
+  </main>
+</body>
+</html>

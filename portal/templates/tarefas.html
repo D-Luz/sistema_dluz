@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% set secao = 'historico' %}
+{% block titulo %}Histórico{% endblock %}
+{% block conteudo %}
+<h1>{{ 'Histórico de todos' if todas else 'Histórico' }}</h1>
+<p class="lead">Os relatórios gerados ficam aqui por 30 dias.
+{% if g.usuario['admin'] %}
+  {% if todas %}<a href="{{ url_for('rotas.lista_tarefas') }}">Ver só os meus</a>{% else %}<a href="{{ url_for('rotas.lista_tarefas', todas=1) }}">Ver de todos</a>{% endif %}
+{% endif %}</p>
+{% if linhas %}
+<div class="lista mt">
+  {% for t in linhas %}
+  <a href="{{ url_for('rotas.tarefa', tid=t['id']) }}">
+    <div>
+      <b>{{ FERRAMENTAS[t['ferramenta']].nome if t['ferramenta'] in FERRAMENTAS else t['ferramenta'] }}</b>
+      <small>{% if todas %}{{ t['usuario_nome'] }} · {% endif %}{{ (t['erro'] or t['resumo'] or '')|truncate(110) }}</small>
+    </div>
+    {% include "_selo.html" %}
+    <span class="quando">{{ t['criada_em']|momento }}</span>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<p class="mt">Nada por aqui ainda. <a href="{{ url_for('rotas.ferramentas') }}">Escolha uma ferramenta →</a></p>
+{% endif %}
+{% endblock %}

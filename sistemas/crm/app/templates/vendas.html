@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block titulo %}Vendas{% endblock %}
+{% block conteudo %}
+<h1>Quem trouxe a venda?</h1>
+<p class="sub">Ligue cada venda ao eletricista. Vale pontos a partir da data de entrada dele no programa. Compras feitas no cadastro do próprio eletricista já entram sozinhas.</p>
+
+<div class="linha-form" style="margin-bottom:1rem">
+  <a class="btn sec" href="{{ url_for('rotas.vendas', dia=ontem) }}">← dia anterior</a>
+  <form method="get"><input type="date" name="dia" value="{{ dia }}"> <button class="btn sec" type="submit">Ir</button></form>
+  <a class="btn sec" href="{{ url_for('rotas.vendas', dia=amanha) }}">dia seguinte →</a>
+</div>
+
+{% if lista %}
+<form method="post">
+  <input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="dia" value="{{ dia }}">
+  <div class="tabela-rolagem"><table>
+    <thead><tr><th>Empresa</th><th>Pedido</th><th>Cliente</th><th>Vendedor</th><th class="n">Total</th><th>Eletricista</th></tr></thead>
+    <tbody>
+    {% for v in lista %}
+      <tr>
+        <td>{{ EMPRESAS[v.empresa].nome if v.empresa in EMPRESAS else v.empresa }}</td>
+        <td class="mono">{{ v.codigo }}</td>
+        <td>{% if anonimo(v.cliente) %}<span class="negativo">consumidor (sem cadastro)</span>{% else %}{{ v.cliente_nome or v.cliente }}{% endif %}</td>
+        <td>{{ v.vendedor_nome }}</td>
+        <td class="n">{{ v.total|brl }}</td>
+        <td>
+          <select name="p:{{ v.empresa }}:{{ v.codigo }}" aria-label="Eletricista da venda {{ v.codigo }}">
+            <option value="">—</option>
+            {% for p in profs %}<option value="{{ p.id }}" {{ 'selected' if v.profissional_id == p.id }}>{{ p.nome }}</option>{% endfor %}
+          </select>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  <p><button class="btn" type="submit">Salvar atribuições</button></p>
+</form>
+{% else %}
+<div class="cartao vazio">Nenhuma venda neste dia (ou ainda não sincronizada).</div>
+{% endif %}
+{% endblock %}

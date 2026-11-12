@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block titulo %}Configurações{% endblock %}
+{% block conteudo %}
+<h1>Configurações</h1>
+<form method="post">
+  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+  <h2>Programa do eletricista</h2>
+  <div class="cartao linha-form">
+    <div><label for="pontos_percentual">Pontos (% da compra)</label><input type="text" id="pontos_percentual" name="pontos_percentual" value="{{ c.pontos_percentual }}" size="6"></div>
+    <div><label for="nivel_a">Nível A a partir de (R$ em 12 meses)</label><input type="text" id="nivel_a" name="nivel_a" value="{{ c.nivel_a }}" size="10"></div>
+    <div><label for="nivel_b">Nível B a partir de (R$)</label><input type="text" id="nivel_b" name="nivel_b" value="{{ c.nivel_b }}" size="10"></div>
+    <div><label for="segmentos_eletricista">Segmentos do ERP que são eletricista</label><input type="text" id="segmentos_eletricista" name="segmentos_eletricista" value="{{ c.segmentos_eletricista }}" size="14"></div>
+  </div>
+  <h2>Fila de contatos</h2>
+  <div class="cartao linha-form">
+    <div><label for="loja">Nome da loja nas mensagens</label><input type="text" id="loja" name="loja" value="{{ c.loja }}"></div>
+    <div><label for="orcamento_dias">Dias que o orçamento fica na fila</label><input type="text" id="orcamento_dias" name="orcamento_dias" value="{{ c.orcamento_dias }}" size="5"></div>
+    <div><label for="pos_venda_minimo">Compra mínima p/ pós-venda (R$)</label><input type="text" id="pos_venda_minimo" name="pos_venda_minimo" value="{{ c.pos_venda_minimo }}" size="8"></div>
+    <div><label for="parado_minimo">Histórico mínimo p/ «parado» (R$)</label><input type="text" id="parado_minimo" name="parado_minimo" value="{{ c.parado_minimo }}" size="8"></div>
+    <div><label for="parado_por_dia">Parados sugeridos por dia</label><input type="text" id="parado_por_dia" name="parado_por_dia" value="{{ c.parado_por_dia }}" size="5"></div>
+    <div><label for="janela_vendas_dias">Histórico importado (dias)</label><input type="text" id="janela_vendas_dias" name="janela_vendas_dias" value="{{ c.janela_vendas_dias }}" size="6"></div>
+  </div>
+  <h2>Mensagens de WhatsApp</h2>
+  <p class="sub">Variáveis: {nome} {loja} {valor} {saldo} {dias} {vendedor}. A mensagem só é aberta no WhatsApp; quem envia é você.</p>
+  {% for tipo, rotulo in TIPOS.items() %}
+  <div class="cartao"><label for="modelo_{{ tipo }}">{{ rotulo }}</label><textarea id="modelo_{{ tipo }}" name="modelo_{{ tipo }}" rows="3">{{ modelos[tipo] }}</textarea></div>
+  {% endfor %}
+  <p><button class="btn" type="submit">Salvar configurações</button></p>
+</form>
+{% endblock %}

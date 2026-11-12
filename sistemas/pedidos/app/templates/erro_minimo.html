@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Erro - Aprovação de Pedidos</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='estilo.css') }}">
+</head>
+<body>
+  {# Página do erro 500/503: independente da base, não consulta o banco nem o usuário logado. #}
+  <header class="topo">
+    <span class="marca">Aprovação de Pedidos</span>
+  </header>
+  <main id="conteudo">
+    <h1>Erro</h1>
+    <p class="erro" role="alert">{{ mensagem }}</p>
+    <p><a href="/">Voltar ao início</a></p>
+  </main>
+</body>
+</html>

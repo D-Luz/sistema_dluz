@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block titulo %}Portal Dluz{% endblock %} · Grupo Dluz</title>
+<link rel="icon" href="{{ url_for('static', filename='logo.png') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='portal.css') }}">
+</head>
+<body>
+{% set secao = secao|default('') %}
+<header class="topo" id="topo">
+  <div class="topo-dentro">
+    <a class="marca" href="{{ url_for('rotas.inicio') }}"><img class="logo" src="{{ url_for('static', filename='logo.png') }}" alt="D.Luz — início"></a>
+    <nav aria-label="Principal">
+      <a href="{{ url_for('rotas.inicio') }}" class="{{ 'atual' if secao == 'inicio' }}">Início</a>
+      <a href="{{ url_for('rotas.ferramentas') }}" class="{{ 'atual' if secao == 'ferramentas' }}">Ferramentas</a>
+      <a href="{{ url_for('rotas.paineis') }}" class="{{ 'atual' if secao == 'painel' }}">Painel</a>
+      <a href="{{ url_for('rotas.lista_tarefas') }}" class="{{ 'atual' if secao == 'historico' }}">Histórico</a>
+      <span class="divisor" aria-hidden="true"></span>
+      {% for nome, s in SISTEMAS.items() %}
+        <a href="{{ s.prefixo }}/">{{ s.curto }}</a>
+      {% endfor %}
+    </nav>
+    {% if g.usuario %}
+    <details class="conta">
+      <summary><span class="avatar">{{ g.usuario['nome'][:1]|upper }}</span><span class="nome">{{ g.usuario['nome'].split(' ')[0] }}</span></summary>
+      <div class="menu">
+        <a href="{{ url_for('auth.trocar_senha') }}">Trocar senha</a>
+        {% if g.usuario['admin'] %}
+          <a href="{{ url_for('auth.usuarios') }}">Usuários</a>
+          <a href="{{ url_for('rotas.configuracoes') }}">Configurações</a>
+        {% endif %}
+        <hr>
+        <form method="post" action="{{ url_for('auth.sair') }}">
+          <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+          <button>Sair</button>
+        </form>
+      </div>
+    </details>
+    {% endif %}
+    <button class="botao-menu secundario pequeno" type="button" id="botao-menu" aria-expanded="false">Menu</button>
+  </div>
+</header>
+<main>
+  {% for categoria, msg in get_flashed_messages(with_categories=true) %}
+    <div class="aviso {{ categoria }}">{{ msg }}</div>
+  {% endfor %}
+  {% block conteudo %}{% endblock %}
+</main>
+<script src="{{ url_for('static', filename='portal.js') }}"></script>
+</body>
+</html>

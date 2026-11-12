@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% block titulo %}{{ EMPRESAS[empresa]['nome'] }} {{ data | data_br }}{% endblock %}
+{% block conteudo %}
+{% include "_cabecalho.html" %}
+{% set aberto = cx['status'] == 'aberto' %}
+{% set lancar = aberto and pode('lancar') %}
+
+<p class="ats-linha">
+  {% if erro_ats %}<span class="negativo">ATS indisponível: {{ erro_ats }}</span> Os lançamentos continuam funcionando; a conferência volta quando o ATS responder.
+  {% elif aberto %}ATS lido às {{ leitura['lido_em'] }} · {{ leitura['pdvs'] }} PDVs passaram pelo caixa{% if leitura['a_prazo'] %} · {{ leitura['a_prazo'] | brl }} a prazo (fora do caixa){% endif %}.
+  {% else %}Conferido com a leitura do ATS das {{ leitura['lido_em'] }} (feita no fechamento).{% endif %}
+  {% if aberto %}
+  <form method="post" action="{{ url_for('rotas.atualizar_ats', caixa_id=cx['id']) }}" class="inline">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <button class="btn sec pequeno" type="submit">Atualizar ATS</button>
+  </form>
+  {% endif %}
+</p>
+
+<div class="duas">
+<section aria-labelledby="t-lanc">
+  <h2 id="t-lanc">Lançamentos</h2>
+  <div class="tabela-rolagem">
+  <table class="lancamentos">
+    <thead><tr><th class="c-hora">Hora</th><th class="c-forma">Forma</th><th class="n c-valor">Valor</th><th>Observação</th><th>Conferência</th><th class="c-acoes"></th></tr></thead>
+    <tbody>
+    {% for l in lancs %}
+      {% set r = por_lanc.get(l['id']) %}
+      {% set saida = FORMAS[l['forma']]['tipo'] == 'saida' %}
+      {% if editando == l['id'] and lancar %}
+      <tr id="l{{ l['id'] }}" class="editando">
+        <td class="c-hora">{{ l['criado_em'] | hora }}</td>
+        <td><select name="forma" form="f-ed" aria-label="Forma">
+          {% for k, f in FORMAS.items() %}<option value="{{ k }}"{% if k == l['forma'] %} selected{% endif %}>{{ f['rotulo'] }}</option>{% endfor %}
+        </select></td>
+        <td><input type="text" name="valor" form="f-ed" class="num" inputmode="decimal" value="{{ l['valor'] | brl }}" aria-label="Valor" autofocus></td>
+        <td><input type="text" name="obs" form="f-ed" value="{{ l['obs'] }}" maxlength="300" aria-label="Observação"></td>
+        <td colspan="2">
+          <form id="f-ed" method="post" action="{{ url_for('rotas.editar', caixa_id=cx['id'], lid=l['id']) }}" class="inline">
+            <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+            <button class="btn pequeno" type="submit">Salvar</button>
+          </form>
+          <a class="btn sec pequeno" href="{{ url_for('rotas.dia', empresa=empresa, data=data) }}#l{{ l['id'] }}">Cancelar</a>
+        </td>
+      </tr>
+      {% else %}
+      <tr id="l{{ l['id'] }}" class="{{ 'saida' if saida }}">
+        <td class="c-hora" title="Lançado por {{ l['criado_nome'] }} em {{ l['criado_em'] | momento }}{% if l['alterado_em'] %}; alterado por {{ l['alterado_nome'] }} em {{ l['alterado_em'] | momento }}{% endif %}">{{ l['criado_em'] | hora }}{% if l['alterado_em'] %}<span class="marca-alt" aria-label="alterado">*</span>{% endif %}</td>
+        <td>{{ FORMAS[l['forma']]['rotulo'] }}</td>
+        <td class="n">{% if saida %}−{% endif %}{{ l['valor'] | brl }}</td>
+        <td class="obs">{{ l['obs'] }}</td>
+        <td class="conf">{% include "_situacao.html" %}</td>
+        <td class="c-acoes">
+          {% if lancar %}
+          <a class="acao" href="{{ url_for('rotas.dia', empresa=empresa, data=data, editar=l['id']) }}#l{{ l['id'] }}">Editar</a>
+          <form method="post" action="{{ url_for('rotas.excluir', caixa_id=cx['id'], lid=l['id']) }}" class="inline" data-confirmar="Excluir {{ FORMAS[l['forma']]['rotulo'] }} de {{ l['valor'] | brl }}?">
+            <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+            <button class="acao" type="submit">Excluir</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endif %}
+    {% else %}
+      <tr><td colspan="6" class="vazio">Nenhum lançamento ainda.</td></tr>
+    {% endfor %}
+    {% if lancar %}
+      <tr id="novo" class="novo">
+        <td class="c-hora sub">agora</td>
+        <td><select name="forma" form="f-novo" id="novo-forma" aria-label="Forma" required>
+          <optgroup label="Entradas">
+          {% for k, f in FORMAS.items() if f['tipo'] == 'entrada' %}<option value="{{ k }}"{% if k == (request.args.get('forma') or 'dinheiro') %} selected{% endif %}>{{ loop.index }} · {{ f['rotulo'] }}</option>{% endfor %}
+          </optgroup>
+          <optgroup label="Saídas">
+          {% for k, f in FORMAS.items() if f['tipo'] == 'saida' %}<option value="{{ k }}"{% if k == request.args.get('forma') %} selected{% endif %}>{{ loop.index + 6 }} · {{ f['rotulo'] }}</option>{% endfor %}
+          </optgroup>
+        </select></td>
+        <td><input type="text" name="valor" form="f-novo" id="novo-valor" class="num" inputmode="decimal" placeholder="0,00" value="{{ request.args.get('valor', '') }}" aria-label="Valor" required autocomplete="off"></td>
+        <td><input type="text" name="obs" form="f-novo" id="novo-obs" maxlength="300" placeholder="opcional" value="{{ request.args.get('obs', '') }}" aria-label="Observação" autocomplete="off"></td>
+        <td class="conf" id="novo-dica" aria-live="polite"></td>
+        <td class="c-acoes">
+          <form id="f-novo" method="post" action="{{ url_for('rotas.lancar', caixa_id=cx['id']) }}" class="inline">
+            <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+            <button class="btn pequeno" type="submit">Lançar</button>
+          </form>
+        </td>
+      </tr>
+    {% endif %}
+    </tbody>
+  </table>
+  </div>
+  {% if lancar %}
+  <p class="dica">Digite o valor e tecle <kbd>Enter</kbd>. Para trocar a forma, <kbd>Shift</kbd>+<kbd>Tab</kbd> e o número dela (1 dinheiro, 2 cartão, 3 depósito/PIX, 4 cheque…): o cursor volta sozinho para o valor. Dev. crédito, troca de pontos, pagamento e outra saída pedem observação.</p>
+  <script type="application/json" id="pdvs-livres">{{ res['conciliacao']['pdvs_sem_lanc'] | tojson }}</script>
+  {% endif %}
+</section>
+
+<aside aria-labelledby="t-conf">
+  <h2 id="t-conf">Conferência{% if aberto %} ao vivo{% endif %}</h2>
+  <div class="cartoes">
+    {% for t in res['totais'] %}
+    <div class="cartao kpi{% if t['diferenca'] %} alerta{% endif %}">
+      <div class="rotulo">{{ t['rotulo'] }}</div>
+      <div class="par"><span class="num">{{ t['lancado'] | brl }}</span> <span class="sub">lançado</span></div>
+      <div class="par"><span class="num">{{ t['ats'] | brl }}</span> <span class="sub">no ATS</span></div>
+      {% if erro_ats and aberto %}<span class="pill neu">sem ATS</span>
+      {% elif t['diferenca'] %}<span class="pill bad">{{ t['diferenca'] | brl(true) }}</span>
+      {% else %}<span class="pill ok">bate</span>{% endif %}
+    </div>
+    {% endfor %}
+    {% for forma, valor in res['especiais'].items() if valor %}
+    <div class="cartao kpi">
+      <div class="rotulo">{{ FORMAS[forma]['rotulo'] }}</div>
+      <div class="par"><span class="num">{{ valor | brl }}</span></div>
+      {% set falta = res['pendentes'] | selectattr('forma', 'equalto', forma) | list %}
+      {% if falta %}<span class="pill wait">{{ falta | length }} aguardando aprovação</span>{% else %}<span class="pill ok">aprovado</span>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  {% set gv = res['gaveta'] %}
+  <div class="cartao gaveta">
+    <div class="rotulo">Gaveta (dinheiro físico)</div>
+    <table class="contas">
+      <tr><td>Saldo inicial</td><td class="n">
+        {% if lancar %}
+        <form method="post" action="{{ url_for('rotas.saldo', caixa_id=cx['id']) }}" class="inline">
+          <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+          <input type="text" name="saldo_inicial" class="num curto" inputmode="decimal" value="{{ gv['inicial'] | brl }}" aria-label="Saldo inicial" data-enviar-ao-mudar>
+        </form>
+        {% else %}{{ gv['inicial'] | brl }}{% endif %}
+      </td></tr>
+      <tr><td>+ Dinheiro lançado</td><td class="n">{{ gv['dinheiro'] | brl }}</td></tr>
+      <tr><td>− Saídas</td><td class="n">{{ gv['saidas'] | brl }}</td></tr>
+      <tr class="total"><td>Esperado na gaveta</td><td class="n">{{ gv['esperado'] | brl }}</td></tr>
+      {% if gv['contado'] is not none %}
+      <tr><td>Contado</td><td class="n">{{ gv['contado'] | brl }}</td></tr>
+      <tr class="{{ 'negativo' if gv['diferenca'] }}"><td>Diferença</td><td class="n">{{ gv['diferenca'] | brl(true) }}</td></tr>
+      {% endif %}
+    </table>
+  </div>
+
+  {% if aberto and pode('fechar') %}
+    <p><a class="btn largo" href="{{ url_for('rotas.encerrar', caixa_id=cx['id']) }}">Encerrar o dia</a></p>
+  {% endif %}
+</aside>
+</div>
+
+{% if not aberto %}
+<section class="cartao fechamento" aria-labelledby="t-fech">
+  <h2 id="t-fech">Fechamento</h2>
+  <p>Fechado por {{ nomes.get(cx['fechado_por'], '?') }} em {{ cx['fechado_em'] | momento }} ·
+    {% if cx['divergencias'] %}<span class="negativo">{{ cx['divergencias'] }} divergência(s)</span>{% else %}sem divergências{% endif %}.
+    <a href="{{ url_for('rotas.imprimir', caixa_id=cx['id']) }}">Imprimir</a></p>
+  {% if cx['justificativa'] %}<p><strong>Justificativa da caixa:</strong> {{ cx['justificativa'] }}</p>{% endif %}
+  {% if res['conciliacao']['pdvs_sem_lanc'] or res['problemas_lanc'] %}
+    <ul class="problemas">
+    {% for lid in res['problemas_lanc'] %}{% set l = lancs | selectattr('id', 'equalto', lid) | first %}{% set r = por_lanc[lid] %}
+      <li>{{ FORMAS[l['forma']]['rotulo'] }} {{ l['valor'] | brl }} ({{ l['criado_em'] | hora }}): {% include "_situacao.html" %}</li>
+    {% endfor %}
+    {% for p in res['conciliacao']['pdvs_sem_lanc'] %}
+      <li>PDV {{ p['pdv'] }} ({{ p['hora'] }}, {{ p['vendedor'] }}): {{ conferencia.rotulo_forma(p['forma']) }} {{ p['valor'] | brl }} sem lançamento</li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+  {% if cx['status'] == 'conferido' %}
+    <p class="ok-texto">Conferido por {{ nomes.get(cx['conferido_por'], '?') }} em {{ cx['conferido_em'] | momento }}{% if cx['obs_financeiro'] %}: “{{ cx['obs_financeiro'] }}”{% endif %}.</p>
+  {% endif %}
+
+  {% if res['pendentes'] and pode('aprovar') %}{% include "_aprovacoes.html" %}{% endif %}
+
+  <div class="linha-form">
+  {% if cx['status'] == 'fechado' and pode('conferir') %}
+    <form method="post" action="{{ url_for('rotas.conferir', caixa_id=cx['id']) }}" class="caixa-acao">
+      <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+      <label for="obs-conf">Observação do financeiro{% if cx['divergencias'] %} (obrigatória){% endif %}</label>
+      <input type="text" id="obs-conf" name="obs" maxlength="300"{% if cx['divergencias'] %} required{% endif %}>
+      <button class="btn" type="submit">Marcar como conferido</button>
+    </form>
+  {% endif %}
+  {% if pode('reabrir') %}
+    <form method="post" action="{{ url_for('rotas.reabrir', caixa_id=cx['id']) }}" class="caixa-acao" data-confirmar="Reabrir este caixa? O fechamento e a conferência são desfeitos (ficam no registro).">
+      <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+      <label for="motivo">Motivo da reabertura</label>
+      <input type="text" id="motivo" name="motivo" maxlength="300" required>
+      <button class="btn sec" type="submit">Reabrir para correção</button>
+    </form>
+  {% endif %}
+  </div>
+</section>
+{% elif res['pendentes'] and pode('aprovar') %}
+<section class="cartao">{% include "_aprovacoes.html" %}</section>
+{% endif %}
+
+<details class="registro">
+  <summary>Registro de alterações ({{ registro | length }})</summary>
+  <table>
+    <thead><tr><th>Quando</th><th>Quem</th><th>O quê</th><th>Detalhe</th></tr></thead>
+    <tbody>
+    {% for h in registro %}
+      <tr><td class="num">{{ h['em'] | momento }}</td><td>{{ h['usuario_nome'] }}</td><td>{{ ACOES.get(h['acao'], h['acao']) }}</td><td>{{ h['detalhe'] }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</details>
+{% endblock %}

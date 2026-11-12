@@ -1,0 +1,4 @@
+{# Texto de várias linhas: cada quebra vira <br>; o autoescape cuida do resto. #}
+{% macro multilinha(texto) -%}
+  <p class="texto">{% for linha in (texto or "").split("\n") %}{{ linha }}{% if not loop.last %}<br>{% endif %}{% endfor %}</p>
+{%- endmacro %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block titulo %}Pedidos - Aprovação de Pedidos{% endblock %}
+{% block conteudo %}
+  <h1>Pedidos</h1>
+
+  {% if atalhos %}
+    <nav class="atalhos" aria-label="Atalhos">
+      <ul>
+        {% for atalho in atalhos %}
+          <li><a href="{{ atalho['url'] }}">{{ atalho["rotulo"] }}</a> <span class="contagem">{{ atalho["quantidade"] }}</span></li>
+        {% endfor %}
+      </ul>
+    </nav>
+  {% endif %}
+
+  <form class="filtro" method="get" action="{{ url_for('pedidos.lista') }}">
+    <div class="campo">
+    <label for="status">Status</label>
+    <select id="status" name="status">
+      <option value="">Todos, menos arquivados</option>
+      {% for opcao in status_opcoes %}
+        <option value="{{ opcao }}"{% if opcao == filtro %} selected{% endif %}>{{ status_label[opcao] }}</option>
+      {% endfor %}
+    </select>
+    </div>
+    <button type="submit" class="secundario">Filtrar</button>
+  </form>
+
+  {% if pedidos %}
+    <table class="tabela tabela-pedidos">
+      <thead>
+        <tr>
+          <th scope="col">Pedido</th>
+          <th scope="col">Cliente</th>
+          <th scope="col" class="num">Valor</th>
+          <th scope="col">Status</th>
+          <th scope="col">Data</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in pedidos %}
+          <tr>
+            <td class="principal" data-label="Pedido"><a href="{{ url_for('pedidos.detalhe', pedido_id=p['id']) }}">{{ titulo_pedido(p["id"]) }}</a></td>
+            <td class="cliente" data-label="Cliente">{{ p["cliente"] }}</td>
+            <td class="num" data-label="Valor">{{ p["valor_centavos"]|brl }}</td>
+            <td data-label="Status"><span class="status status-{{ p['status'] }}">{{ status_label[p["status"]] }}</span></td>
+            <td class="data" data-label="Data">{{ p["criado_em"]|instante }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if pedidos|length >= limite %}
+      <p class="nota">Mostrando os {{ limite }} pedidos mais recentes.</p>
+    {% endif %}
+  {% else %}
+    <p>Nenhum pedido encontrado.</p>
+  {% endif %}
+{% endblock %}

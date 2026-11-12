@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block titulo %}{{ EMPRESAS[empresa]['nome'] }} {{ data | data_br }}{% endblock %}
+{% block conteudo %}
+{% set cx = None %}
+{% include "_cabecalho.html" %}
+<div class="cartao estreito">
+  {% if futuro %}
+    <p>Esse dia ainda não chegou.</p>
+  {% elif pode('lancar') %}
+    <h2>Abrir o caixa</h2>
+    <p class="sub">O saldo inicial é o dinheiro que já está na gaveta (o fundo de troco). Sugerido: o que foi contado no último fechamento.</p>
+    <form method="post" action="{{ url_for('rotas.abrir') }}">
+      <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+      <input type="hidden" name="empresa" value="{{ empresa }}">
+      <input type="hidden" name="data" value="{{ data }}">
+      <label for="saldo_inicial">Saldo inicial da gaveta (R$)</label>
+      <input type="text" id="saldo_inicial" name="saldo_inicial" class="num" inputmode="decimal" value="{{ saldo | brl }}" autofocus>
+      <p><button class="btn" type="submit">Abrir caixa</button></p>
+    </form>
+  {% else %}
+    <p>O caixa desse dia ainda não foi aberto.</p>
+  {% endif %}
+</div>
+{% endblock %}

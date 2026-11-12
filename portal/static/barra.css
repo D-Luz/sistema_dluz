@@ -1,0 +1,17 @@
+/* Barra do portal inserida no topo de Pedidos, CRM e Caixa. */
+.dluz-portal-barra {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px;
+  background: #F6ECD6; color: #1F1B16; padding: 8px 20px; border-top: 3px solid #946517; border-bottom: 1px solid #E8D9B8;
+  font: 500 13px/1.4 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  position: relative; z-index: 1000;
+}
+.dluz-portal-barra a { color: #6B5A3A; text-decoration: none; padding: 4px 11px; border-radius: 99px; }
+.dluz-portal-barra a:hover { color: #1F1B16; background: #EEDDB8; }
+.dluz-portal-barra a.atual { color: #FFFFFF; background: #946517; }
+.dluz-portal-barra .marca { padding: 0 6px 0 0; }
+.dluz-portal-barra .marca:hover { background: none; }
+.dluz-portal-barra .marca img { height: 20px; display: block; }
+.dluz-portal-barra .links { display: flex; flex-wrap: wrap; gap: 2px; }
+.dluz-portal-barra .quem { margin-left: auto; color: #6B5A3A; }
+@media print { .dluz-portal-barra { display: none; } }
+.aviso-portal { background: #F7EFDD; color: #1F1B16; padding: 10px 14px; border-radius: 8px; font-size: 14px; }

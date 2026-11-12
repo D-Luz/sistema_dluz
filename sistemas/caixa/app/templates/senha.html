@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block titulo %}Trocar senha{% endblock %}
+{% block conteudo %}
+<div class="login cartao">
+  <h1>Trocar senha</h1>
+  {% if g.usuario['trocar_senha'] %}<p class="sub">Primeiro acesso: escolha uma senha sua antes de continuar.</p>{% endif %}
+  <form method="post">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <label for="atual">Senha atual</label>
+    <input type="password" id="atual" name="atual" autocomplete="current-password" required autofocus>
+    <label for="nova">Nova senha (mínimo de 8 caracteres)</label>
+    <input type="password" id="nova" name="nova" autocomplete="new-password" minlength="8" required>
+    <label for="confirmacao">Repita a nova senha</label>
+    <input type="password" id="confirmacao" name="confirmacao" autocomplete="new-password" minlength="8" required>
+    <p><button class="btn" type="submit">Salvar</button></p>
+  </form>
+</div>
+{% endblock %}

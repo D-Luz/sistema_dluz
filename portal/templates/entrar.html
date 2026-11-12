@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Entrar · Portal Dluz</title>
+<link rel="icon" href="{{ url_for('static', filename='logo.png') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='portal.css') }}">
+</head>
+<body>
+<div class="entrada">
+  <form method="post" class="ficha">
+    <img class="logo" src="{{ url_for('static', filename='logo.png') }}" alt="D.Luz">
+    <h1 class="centro">Entrar</h1>
+    <p class="sub centro">Portal do Grupo Dluz</p>
+    {% for categoria, msg in get_flashed_messages(with_categories=true) %}
+      <div class="aviso {{ categoria }}">{{ msg }}</div>
+    {% endfor %}
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <div class="campo"><label for="login">Usuário</label>
+      <input type="text" id="login" name="login" autocomplete="username" autocapitalize="none" required autofocus></div>
+    <div class="campo"><label for="senha">Senha</label>
+      <input type="password" id="senha" name="senha" autocomplete="current-password" required></div>
+    <button>Entrar</button>
+  </form>
+</div>
+</body>
+</html>

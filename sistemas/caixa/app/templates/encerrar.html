@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block titulo %}Encerrar {{ EMPRESAS[empresa]['nome'] }} {{ data | data_br }}{% endblock %}
+{% block conteudo %}
+{% include "_cabecalho.html" %}
+{% set conc = res['conciliacao'] %}
+{% set aqui = url_for('rotas.encerrar', caixa_id=cx['id']) %}
+<p><a href="{{ url_for('rotas.dia', empresa=empresa, data=data) }}">← Voltar aos lançamentos</a></p>
+
+{% if erro_ats %}
+  <div class="flash erro">ATS indisponível: {{ erro_ats }} O dia só pode ser fechado com o ATS respondendo.</div>
+{% else %}
+  <p class="ats-linha">Conferência PDV a PDV com o ATS lido agora ({{ leitura['lido_em'] }}): {{ leitura['pdvs'] }} PDVs no caixa.
+    {% if res['divergencias'] %}<span class="pill bad">{{ res['divergencias'] }} divergência(s)</span>{% else %}<span class="pill ok">tudo bate</span>{% endif %}</p>
+{% endif %}
+
+{% if res['problemas_lanc'] %}
+<section class="cartao">
+  <h2>Lançamentos que não bateram</h2>
+  <p class="sub">Corrija o valor na tela de lançamentos, ou ligue à mão ao PDV certo (por exemplo, quando o PDV teve o valor alterado depois).</p>
+  <div class="tabela-rolagem"><table>
+    <thead><tr><th>Hora</th><th>Forma</th><th class="n">Valor</th><th>Situação</th><th>Ligar ao PDV</th></tr></thead>
+    <tbody>
+    {% for lid in res['problemas_lanc'] %}{% set l = lancs | selectattr('id', 'equalto', lid) | first %}{% set r = por_lanc[lid] %}
+      <tr>
+        <td>{{ l['criado_em'] | hora }}</td><td>{{ FORMAS[l['forma']]['rotulo'] }}</td><td class="n">{{ l['valor'] | brl }}</td>
+        <td>{% include "_situacao.html" %}</td>
+        <td>
+          <form method="post" action="{{ url_for('rotas.vincular', caixa_id=cx['id']) }}" class="inline">
+            <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+            <input type="hidden" name="lanc" value="{{ l['id'] }}">
+            <label for="v{{ l['id'] }}" class="oculto">PDV</label>
+            <select name="pdv" id="v{{ l['id'] }}">
+              <option value="">{{ 'desligar' if l['pdv_vinculado'] else 'escolha…' }}</option>
+              {% for p in conc['pdvs_sem_lanc'] %}<option value="{{ p['pdv'] }}">{{ p['pdv'] }} · {{ p['hora'] }} · {{ conferencia.rotulo_forma(p['forma']) }} {{ p['valor'] | brl }}</option>{% endfor %}
+            </select>
+            <button class="btn sec pequeno" type="submit">Ligar</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</section>
+{% endif %}
+
+{% if conc['pdvs_sem_lanc'] %}
+<section class="cartao">
+  <h2>PDVs sem lançamento</h2>
+  <p class="sub">Venda que está no ATS mas não foi lançada na planilha. Lance o valor ou ligue a um lançamento acima.</p>
+  <div class="tabela-rolagem"><table>
+    <thead><tr><th>PDV</th><th>Hora</th><th>Vendedor</th><th>Forma</th><th class="n">Valor</th></tr></thead>
+    <tbody>
+    {% for p in conc['pdvs_sem_lanc'] %}
+      <tr><td>{{ p['pdv'] }}</td><td>{{ p['hora'] }}</td><td>{{ p['vendedor'] }}</td><td>{{ conferencia.rotulo_forma(p['forma']) }}</td><td class="n">{{ p['valor'] | brl }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</section>
+{% endif %}
+
+{% if res['pendentes'] %}
+<section class="cartao">
+  {% if pode('aprovar') %}{% set voltar = aqui %}{% include "_aprovacoes.html" %}
+  {% else %}
+  <h3>Aguardando aprovação do financeiro</h3>
+  <ul>{% for l in res['pendentes'] %}<li>{{ FORMAS[l['forma']]['rotulo'] }} {{ l['valor'] | brl }} — “{{ l['obs'] }}”</li>{% endfor %}</ul>
+  <p class="sub">O dia pode ser fechado; o financeiro aprova antes de conferir.</p>
+  {% endif %}
+</section>
+{% endif %}
+
+<section class="cartao">
+  <h2>Totais por forma</h2>
+  <table>
+    <thead><tr><th>Forma</th><th class="n">Lançado</th><th class="n">ATS</th><th class="n">Diferença</th></tr></thead>
+    <tbody>
+    {% for t in res['totais'] %}
+      <tr class="{{ 'negativo' if t['diferenca'] }}"><td>{{ t['rotulo'] }}</td><td class="n">{{ t['lancado'] | brl }}</td><td class="n">{{ t['ats'] | brl }}</td><td class="n">{{ t['diferenca'] | brl(true) }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <details>
+    <summary>Lançamentos que bateram com o PDV</summary>
+    <ul class="batidos">
+    {% for l in lancs if por_lanc[l['id']]['situacao'] == 'ok' %}
+      <li>{{ FORMAS[l['forma']]['rotulo'] }} {{ l['valor'] | brl }} → PDV {{ por_lanc[l['id']]['pdv'] }} ({{ por_lanc[l['id']]['parte']['hora'] }})</li>
+    {% endfor %}
+    </ul>
+  </details>
+</section>
+
+{% set gv = res['gaveta'] %}
+<section class="cartao estreito">
+  <h2>Fechar a gaveta</h2>
+  <table class="contas">
+    <tr><td>Saldo inicial</td><td class="n">{{ gv['inicial'] | brl }}</td></tr>
+    <tr><td>+ Dinheiro lançado</td><td class="n">{{ gv['dinheiro'] | brl }}</td></tr>
+    <tr><td>− Saídas</td><td class="n">{{ gv['saidas'] | brl }}</td></tr>
+    <tr class="total"><td>Esperado na gaveta</td><td class="n" id="esperado" data-centavos="{{ gv['esperado'] }}">{{ gv['esperado'] | brl }}</td></tr>
+  </table>
+  <form method="post" action="{{ url_for('rotas.fechar', caixa_id=cx['id']) }}" data-confirmar="Fechar o caixa deste dia? Depois disso só o financeiro reabre.">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <label for="contado">Dinheiro contado na gaveta (R$)</label>
+    <input type="text" id="contado" name="contado" class="num" inputmode="decimal" value="{{ request.args.get('contado', '') }}" required autocomplete="off">
+    <p id="dif-gaveta" class="sub" aria-live="polite"></p>
+    <label for="justificativa">Justificativa {% if res['divergencias'] %}(obrigatória: há divergência){% else %}(se a gaveta não bater){% endif %}</label>
+    <textarea id="justificativa" name="justificativa" rows="3" maxlength="1000">{{ request.args.get('justificativa', '') }}</textarea>
+    <p><button class="btn largo" type="submit"{% if erro_ats %} disabled{% endif %}>Fechar o dia e imprimir</button></p>
+  </form>
+</section>
+{% endblock %}

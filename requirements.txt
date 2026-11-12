@@ -1,0 +1,22 @@
+# Instalar: python -m pip install -r requirements.txt
+# Portal e sistemas (Pedidos, CRM, Caixa)
+Flask==3.1.3
+Flask-WTF==1.3.0
+waitress==3.0.2
+Werkzeug==3.1.9
+firebirdsql==1.5.0
+passlib==1.7.4
+pycryptodome==4.2.0
+tzdata==2026.5
+# Ferramentas (scripts originais)
+pandas==3.1.0
+numpy==2.5.4
+openpyxl==3.1.5
+pdfplumber==0.11.10
+reportlab==5.1.0
+fpdf2==2.8.9
+fonttools==4.68.0
+pillow==13.0.0
+requests==2.34.2
+# Testes
+pytest==9.2.0

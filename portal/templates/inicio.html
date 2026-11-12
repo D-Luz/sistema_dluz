@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% from "_icones.html" import icone with context %}
+{% set secao = 'inicio' %}
+{% block titulo %}Início{% endblock %}
+{% block conteudo %}
+<h1>Olá, {{ g.usuario['nome'].split(' ')[0] }}</h1>
+<p class="lead">O que você quer fazer hoje?</p>
+
+<h2>Sistemas</h2>
+<div class="cards">
+  {% for nome, s in SISTEMAS.items() %}
+    {% with href=s.prefixo ~ '/', ic=ICONES[nome], titulo=s.titulo, texto=s.descricao,
+            rodape=('Abrir' if sistema_ok(nome) else 'Indisponível'), classe=('' if sistema_ok(nome) else 'fora') %}
+      {% include "_card.html" %}
+    {% endwith %}
+  {% endfor %}
+</div>
+
+<h2>Relatórios e ferramentas</h2>
+<div class="cards">
+  {% for gid, gnome in GRUPOS if gid != 'paineis' %}
+    {% set qtd = FERRAMENTAS.values()|selectattr('grupo', 'equalto', gid)|list|length %}
+    {% with href=url_for('rotas.area', gid=gid), ic=ICONES[gid], titulo=gnome, texto=AREAS_DESCRICAO[gid],
+            rodape=qtd ~ (' ferramentas' if qtd != 1 else ' ferramenta') %}
+      {% include "_card.html" %}
+    {% endwith %}
+  {% endfor %}
+  {% with href=url_for('rotas.paineis'), ic='painel', titulo='Painel ATS',
+          texto=('Atualizado em ' ~ (paineis[0][1]['terminada_em']|momento)) if paineis else 'Contas a pagar, a receber e receita do grupo.',
+          rodape='Ver painel' %}
+    {% include "_card.html" %}
+  {% endwith %}
+</div>
+
+{% if recentes %}
+<h2>Recentes</h2>
+<div class="lista">
+  {% for t in recentes %}
+  <a href="{{ url_for('rotas.tarefa', tid=t['id']) }}">
+    <div>
+      <b>{{ FERRAMENTAS[t['ferramenta']].nome if t['ferramenta'] in FERRAMENTAS else t['ferramenta'] }}</b>
+      <small>{{ (t['erro'] or t['resumo'] or '')|truncate(100) }}</small>
+    </div>
+    {% include "_selo.html" %}
+    <span class="quando">{{ t['criada_em']|momento }}</span>
+  </a>
+  {% endfor %}
+</div>
+<p class="mt"><a href="{{ url_for('rotas.lista_tarefas') }}">Ver histórico completo →</a></p>
+{% endif %}
+{% endblock %}

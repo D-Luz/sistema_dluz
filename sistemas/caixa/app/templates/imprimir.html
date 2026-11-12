@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block titulo %}Impressão {{ EMPRESAS[empresa]['nome'] }} {{ data | data_br }}{% endblock %}
+{% block corpo %}impressao{% endblock %}
+{% block conteudo %}
+{% set gv = res['gaveta'] %}
+{% set conc = res['conciliacao'] %}
+<div class="nao-imprimir barra-imprimir">
+  <a href="{{ url_for('rotas.dia', empresa=empresa, data=data) }}">← Voltar</a>
+  <button class="btn" type="button" data-imprimir>Imprimir</button>
+</div>
+
+<header class="folha-cab">
+  <h1>Controle diário · {{ EMPRESAS[empresa]['nome'] }}</h1>
+  <p>{{ data | dia_semana }} {{ data | data_br }} ·
+    {% if cx['status'] == 'aberto' %}<strong>CAIXA AINDA ABERTO (prévia)</strong>
+    {% else %}fechado por {{ nomes.get(cx['fechado_por'], '?') }} em {{ cx['fechado_em'] | momento }}{% endif %}
+    {% if cx['status'] == 'conferido' %} · conferido por {{ nomes.get(cx['conferido_por'], '?') }} em {{ cx['conferido_em'] | momento }}{% endif %}
+  </p>
+</header>
+
+<div class="folha-grade">
+  <section>
+    <h2>Recebimentos × ATS</h2>
+    <table>
+      <thead><tr><th>Forma</th><th class="n">Lançado</th><th class="n">ATS</th><th class="n">Dif.</th></tr></thead>
+      <tbody>
+      {% for t in res['totais'] %}
+        <tr><td>{{ t['rotulo'] }}</td><td class="n">{{ t['lancado'] | brl }}</td><td class="n">{{ t['ats'] | brl }}</td><td class="n">{{ t['diferenca'] | brl(true) if t['diferenca'] else '—' }}</td></tr>
+      {% endfor %}
+      {% for forma, valor in res['especiais'].items() if valor %}
+        <tr><td>{{ FORMAS[forma]['rotulo'] }}</td><td class="n">{{ valor | brl }}</td><td colspan="2" class="sub">aprovação</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% if leitura['a_prazo'] %}<p class="sub">Vendas a prazo no ATS (fora do caixa): {{ leitura['a_prazo'] | brl }}.</p>{% endif %}
+  </section>
+  <section>
+    <h2>Gaveta</h2>
+    <table class="contas">
+      <tr><td>Saldo inicial</td><td class="n">{{ gv['inicial'] | brl }}</td></tr>
+      <tr><td>+ Dinheiro</td><td class="n">{{ gv['dinheiro'] | brl }}</td></tr>
+      <tr><td>− Saídas</td><td class="n">{{ gv['saidas'] | brl }}</td></tr>
+      <tr class="total"><td>Esperado</td><td class="n">{{ gv['esperado'] | brl }}</td></tr>
+      <tr><td>Contado</td><td class="n">{{ gv['contado'] | brl if gv['contado'] is not none else '—' }}</td></tr>
+      <tr class="total"><td>Diferença</td><td class="n">{{ gv['diferenca'] | brl(true) if gv['diferenca'] is not none else '—' }}</td></tr>
+    </table>
+  </section>
+</div>
+
+<section>
+  <h2>Lançamentos</h2>
+  <table class="compacta">
+    <thead><tr><th>Hora</th><th>Forma</th><th class="n">Valor</th><th>PDV</th><th>Observação</th><th>Por</th></tr></thead>
+    <tbody>
+    {% for l in lancs %}{% set r = por_lanc.get(l['id']) %}
+      <tr>
+        <td>{{ l['criado_em'] | hora }}</td>
+        <td>{{ FORMAS[l['forma']]['rotulo'] }}</td>
+        <td class="n">{% if FORMAS[l['forma']]['tipo'] == 'saida' %}−{% endif %}{{ l['valor'] | brl }}</td>
+        <td>{% if r and r.get('pdv') %}{{ r['pdv'] }}{% if r['situacao'] != 'ok' %} ({{ conferencia.ROTULO_SITUACAO[r['situacao']] }}){% endif %}
+            {% elif r and r['situacao'] == 'sem_pdv' %}sem PDV{% elif r and r['situacao'] == 'aprovacao' %}{% if l['aprovado_por'] %}aprov. {{ l['aprovado_nome'] }}{% else %}não aprovado{% endif %}{% endif %}</td>
+        <td>{{ l['obs'] }}{% if l['aprovacao_obs'] %} · aprov.: {{ l['aprovacao_obs'] }}{% endif %}</td>
+        <td>{{ l['criado_nome'] }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+{% if conc['pdvs_sem_lanc'] %}
+<section>
+  <h2>PDVs do ATS sem lançamento</h2>
+  <table class="compacta">
+    <thead><tr><th>PDV</th><th>Hora</th><th>Vendedor</th><th>Forma</th><th class="n">Valor</th></tr></thead>
+    <tbody>{% for p in conc['pdvs_sem_lanc'] %}<tr><td>{{ p['pdv'] }}</td><td>{{ p['hora'] }}</td><td>{{ p['vendedor'] }}</td><td>{{ conferencia.rotulo_forma(p['forma']) }}</td><td class="n">{{ p['valor'] | brl }}</td></tr>{% endfor %}</tbody>
+  </table>
+</section>
+{% endif %}
+
+{% if cx['justificativa'] %}<p><strong>Justificativa:</strong> {{ cx['justificativa'] }}</p>{% endif %}
+{% if cx['obs_financeiro'] %}<p><strong>Financeiro:</strong> {{ cx['obs_financeiro'] }}</p>{% endif %}
+<p class="resultado">{% if res['divergencias'] %}{{ res['divergencias'] }} divergência(s){% else %}Sem divergências{% endif %} · ATS lido às {{ leitura['lido_em'] or '—' }}</p>
+
+<div class="assinaturas">
+  <div>Caixa</div>
+  <div>Financeiro</div>
+</div>
+{% endblock %}

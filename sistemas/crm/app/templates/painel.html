@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block titulo %}Painel{% endblock %}
+{% block conteudo %}
+<h1>Painel</h1>
+<p class="sub">Últimos 30 dias de vendas. A primeira linha é a que mais importa: sem saber quem comprou, o CRM não tem para quem ligar.</p>
+
+<h2>1. Dá para contatar quem compra?</h2>
+<div class="grade">
+  <div class="cartao kpi {{ 'alerta' if m.pct_contatavel < 40 }}"><div class="valor">{{ m.pct_contatavel }}%</div><div class="rotulo">da venda (em R$) com cliente contatável</div><div class="nota">Cliente identificado e com telefone. Meta inicial: 40%.</div></div>
+  <div class="cartao kpi {{ 'alerta' if m.pct_identificado < 40 }}"><div class="valor">{{ m.pct_identificado }}%</div><div class="rotulo">da venda com cliente identificado</div><div class="nota">O resto foi para «consumidor» no PDV.</div></div>
+  <div class="cartao kpi {{ 'alerta' if m.pct_com_profissional < 15 }}"><div class="valor">{{ m.pct_com_profissional }}%</div><div class="rotulo">da venda ligada a um eletricista</div><div class="nota">Vendas atribuídas na tela «Vendas» ou compradas no cadastro do próprio eletricista.</div></div>
+  <div class="cartao kpi"><div class="valor">{{ m.vendas_30d|brl }}</div><div class="rotulo">vendido nos últimos 30 dias</div></div>
+</div>
+
+<h2>2. Eletricistas</h2>
+<div class="grade">
+  <div class="cartao kpi"><div class="valor">{{ m.prof_compraram_90d }} / {{ m.prof_ativos }}</div><div class="rotulo">compraram nos últimos 90 dias</div></div>
+  <div class="cartao kpi"><div class="valor">{{ m.niveis.A }} · {{ m.niveis.B }} · {{ m.niveis.C }}</div><div class="rotulo">níveis A · B · C</div></div>
+  <div class="cartao kpi"><div class="valor">{{ m.pontos_emitidos_mes|brl }}</div><div class="rotulo">em pontos emitidos neste mês</div></div>
+  <div class="cartao kpi"><div class="valor">{{ m.pontos_passivo|brl }}</div><div class="rotulo">saldo total de pontos (o que a loja deve em crédito)</div></div>
+</div>
+
+<h2>3. Orçamentos</h2>
+<div class="grade">
+  <div class="cartao kpi"><div class="valor">{{ m.orc_abertos }}</div><div class="rotulo">orçamentos em aberto</div><div class="nota">{{ m.orc_total|brl }} no total</div></div>
+  <div class="cartao kpi {{ 'alerta' if m.pct_orc_contatavel < 40 }}"><div class="valor">{{ m.pct_orc_contatavel }}%</div><div class="rotulo">do valor com cliente contatável</div><div class="nota">Orçamento sem cliente identificado não entra na fila de retorno.</div></div>
+</div>
+
+<h2>4. O esforço de relacionamento está dando resultado?</h2>
+<div class="grade">
+  <div class="cartao kpi"><div class="valor">{{ m.contatos_semana }}</div><div class="rotulo">contatos registrados na última semana</div></div>
+  <div class="cartao kpi"><div class="valor">{{ m.pct_retorno }}%</div><div class="rotulo">das conversas foram seguidas de compra em até 14 dias</div><div class="nota">{{ m.conversas_com_retorno }} de {{ m.conversas_elegiveis }} conversas com 14+ dias.</div></div>
+</div>
+{% endblock %}
